@@ -61,8 +61,10 @@ class EfoIndex():
                 rels = set()
 
                 if self.rels_index:
-                    rels.update(self.rels_index[iri])
-                    rels.update(self.rev_rels_index[iri])
+                    if iri in self.rels_index:
+                        rels.update(self.rels_index[iri])
+                    if iri in self.rev_rels_index:
+                        rels.update(self.rev_rels_index[iri])
                     
                     return rels
                 
