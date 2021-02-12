@@ -78,7 +78,7 @@ class EfoIndex():
                         
                     return self.cache[iri]
 
-            for predicate, related_iri in self.get_efo_relatives(iri):
+            for predicate, related_iri in get_efo_relatives(iri):
 
                 new_d = None
                 if predicate in {'close', 'child', 'parent'}:
@@ -89,11 +89,11 @@ class EfoIndex():
                 if (not new_d is None) and (new_d >= 0):
                     if not ((related_iri in related_iris) and (new_d < related_iris[related_iri])):
                         related_iris[related_iri] = new_d
-                        related_iris = self.rec_f(related_iri, distance=new_d, related_iris=related_iris)
+                        related_iris = rec_f(related_iri, distance=new_d, related_iris=related_iris)
 
             return related_iris
 
-        r = self.rec_f(iri, distance=distance, related_iris={})
+        r = rec_f(iri, distance=distance, related_iris={})
         r = {str(k):distance-d for k,d in r.items() if not str(k) == str(iri)}
 
         return r  # adjust distances
