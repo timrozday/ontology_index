@@ -57,7 +57,7 @@ class EfoIndex():
         def rec_f(iri, distance=2, related_iris={}):
 
             def get_efo_relatives(iri):
-                p_str = ','.join(f"<{i}>" for i in equivalent_rels|close_rels|xref_rels|child_rels|parent_rels)  # ['owl:equivalentClass', ':exactMatch', ':closeMatch', ':narrowMatch', ':broadMatch', 'rdfs:subClassOf', 'oboInOwl:inSubset']
+                p_str = ','.join(f"<{i}>" for i in self.equivalent_rels|self.close_rels|self.xref_rels|self.child_rels|self.parent_rels)  # ['owl:equivalentClass', ':exactMatch', ':closeMatch', ':narrowMatch', ':broadMatch', 'rdfs:subClassOf', 'oboInOwl:inSubset']
                 rels = set()
 
                 if self.rels_index:
