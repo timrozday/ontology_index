@@ -119,7 +119,7 @@ class EfoIndex():
         try:
             query = self.efo_graph.query(f"SELECT ?o WHERE {{ ?q <http://www.w3.org/2000/01/rdf-schema#label> ?o }}", initBindings={'q': rdflib.URIRef(iri)})
             return str(list(query)[0][0])
-        except IndexError as e:
+        except:
             return None
         
     def gen_rel_indexes(self):
@@ -252,7 +252,7 @@ class MeshIndex():
         try:
             query = self.mesh_graph.query(f"SELECT ?o WHERE {{ ?q <http://www.w3.org/2000/01/rdf-schema#label> ?o }}", initBindings={'q': rdflib.URIRef(iri)})
             return str(list(query)[0][0])
-        except IndexError as e:
+        except:
             return None
 
     def gen_treenumber_indexes(self):
