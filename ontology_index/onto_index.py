@@ -116,8 +116,8 @@ class EfoIndex():
         return {(k1,k2,min(vs)) for (k1,k2),vs in links.items()}
 
     def get_efo_name(self, iri):
-        query = self.efo_graph.query(f"SELECT ?o WHERE {{ ?q <http://www.w3.org/2000/01/rdf-schema#label> ?o }}", initBindings={'q': rdflib.URIRef(iri)})
         try:
+            query = self.efo_graph.query(f"SELECT ?o WHERE {{ ?q <http://www.w3.org/2000/01/rdf-schema#label> ?o }}", initBindings={'q': rdflib.URIRef(iri)})
             return str(list(query)[0][0])
         except IndexError as e:
             return None
@@ -249,8 +249,8 @@ class MeshIndex():
         return related_iris
 
     def get_mesh_name(self, iri):
-        query = self.mesh_graph.query(f"SELECT ?o WHERE {{ mesh2021:{iri} <http://www.w3.org/2000/01/rdf-schema#label> ?o }}")
         try:
+            query = self.mesh_graph.query(f"SELECT ?o WHERE {{ ?q <http://www.w3.org/2000/01/rdf-schema#label> ?o }}", initBindings={'q': rdflib.URIRef(iri)})
             return str(list(query)[0][0])
         except IndexError as e:
             return None
