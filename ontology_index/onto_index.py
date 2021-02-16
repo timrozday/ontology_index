@@ -36,6 +36,14 @@ class EfoIndex():
             **{k:'parent' for k in self.parent_rels},
         }
         
+        self.rev_rel_dict = {
+            **{k:'equivalent' for k in self.equivalent_rels}, 
+            **{k:'close' for k in self.close_rels},
+            **{k:'xref' for k in self.xref_rels},
+            **{k:'parent' for k in self.child_rels},
+            **{k:'child' for k in self.parent_rels},
+        }
+        
         self.efo_graph = rdflib.ConjunctiveGraph(store="Sleepycat")
         
         
@@ -52,12 +60,11 @@ class EfoIndex():
         
         self.cache = {}
 
-    def get_distant_efo_relatives(self, iri, distance=2):
+    def get_distant_efo_relatives(self, iri, distance=2, distant_rels={'close', 'child', 'parent'}, equivalent_rels={'equivalent'}):
 
         def rec_f(iri, distance=2, related_iris={}):
 
             def get_efo_relatives(iri):
-                p_str = ','.join(f"<{i}>" for i in self.equivalent_rels|self.close_rels|self.xref_rels|self.child_rels|self.parent_rels)  # ['owl:equivalentClass', ':exactMatch', ':closeMatch', ':narrowMatch', ':broadMatch', 'rdfs:subClassOf', 'oboInOwl:inSubset']
                 rels = set()
 
                 if self.rels_index:
@@ -70,11 +77,13 @@ class EfoIndex():
                 
                 else:
                     if not iri in self.cache:
+                        p_str = ','.join(f"<{i}>" for i in self.equivalent_rels|self.close_rels|self.xref_rels|self.child_rels|self.parent_rels)  # ['owl:equivalentClass', ':exactMatch', ':closeMatch', ':narrowMatch', ':broadMatch', 'rdfs:subClassOf', 'oboInOwl:inSubset']
+                        
                         query = self.efo_graph.query(f"SELECT ?p ?o WHERE {{ ?q ?p ?o . FILTER ( ?p IN({p_str}) )}}", initBindings={'q': rdflib.URIRef(iri)})
                         rels.update({(self.rel_dict[str(p)],o) for p,o in query if isinstance(o, rdflib.term.URIRef)})
 
                         query = self.efo_graph.query(f"SELECT ?p ?s WHERE {{ ?s ?p ?q . FILTER ( ?p IN({p_str}) )}}", initBindings={'q': rdflib.URIRef(iri)})
-                        rels.update({(self.rel_dict[str(p)],s) for p,s in query if isinstance(s, rdflib.term.URIRef)})
+                        rels.update({(self.rev_rel_dict[str(p)],s) for p,s in query if isinstance(s, rdflib.term.URIRef)})
                         
                         self.cache[iri] = rels
                         
@@ -83,9 +92,9 @@ class EfoIndex():
             for predicate, related_iri in get_efo_relatives(iri):
 
                 new_d = None
-                if predicate in {'close', 'child', 'parent'}:
+                if predicate in distant_rels:
                     new_d = distance-1
-                if predicate in {'equivalent'}:
+                if predicate in equivalent_rels:
                     new_d = distance
 
                 if (not new_d is None) and (new_d >= 0):
@@ -130,7 +139,7 @@ class EfoIndex():
         for s,p,o in tqdm(self.efo_graph.query(f"SELECT ?s ?p ?o WHERE {{ ?s ?p ?o . FILTER ( ?p IN({p_str}) )}}"), leave=True, position=0):
             if isinstance(s, rdflib.term.URIRef) and isinstance(o, rdflib.term.URIRef):
                 self.rels_index[str(s)].add((self.rel_dict[str(p)],str(o)))
-                self.rev_rels_index[str(o)].add((self.rel_dict[str(p)],str(s)))
+                self.rev_rels_index[str(o)].add((self.rev_rel_dict[str(p)],str(s)))
     
     def save_indexes(self, data_dir=None):
         if data_dir is None:
@@ -224,7 +233,7 @@ class MeshIndex():
                     iri_links.add((iri1, iri2, d))
         return iri_links
 
-    def get_distant_mesh_relatives(self, iri, distance=2):
+    def get_distant_mesh_relatives(self, iri, distance=2, search_up=True):
 
         def rec_f(tn, distance=2, related_iris=set()):
             if tn in self.treenumber_index:
@@ -245,6 +254,10 @@ class MeshIndex():
                     break
                 sub_tn = '.'.join(tn_split[:idx+1])
                 related_iris.update(rec_f(sub_tn, distance=distance-i, related_iris=related_iris))
+                
+                # if config dictates, terminate the upwards search before it begins
+                if not search_up:
+                    break
 
         return related_iris
 
@@ -286,5 +299,3 @@ class MeshIndex():
             self.treenumber_index = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/iri2treenumber.json", 'rt') as f:
             self.iri2treenumber = {k:set(vs) for k,vs in json.load(f).items()}
-        
-        
