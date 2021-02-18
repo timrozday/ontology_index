@@ -4,6 +4,7 @@ from collections import defaultdict
 import pickle
 import json
 from tqdm.auto import tqdm
+import zipfile
 
 class EfoIndex():
     equivalent_rels = {
@@ -24,6 +25,19 @@ class EfoIndex():
         'http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#excluded_subClassOf',
         'http://www.geneontology.org/formats/oboInOwl#inSubset'
     }
+    name_labels = {
+        'http://www.w3.org/2000/01/rdf-schema#label',
+        'http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#prefLabel',
+        'http://purl.obolibrary.org/obo/ArrayExpress_label',
+        'http://www.geneontology.org/formats/oboInOwl#hasExactSynonym',
+        'http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym',
+        'http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym',
+        'http://www.geneontology.org/formats/oboInOwl#hasNarrowSynonym',
+        'http://www.geneontology.org/formats/oboInOwl#shorthand',
+        'http://purl.obolibrary.org/obo/IAO_0100001',
+        'http://purl.obolibrary.org/obo/SRA_label'
+    }
+    pref_label = 'http://www.w3.org/2000/01/rdf-schema#label'
     
     def __init__(self, data_dir='.'):
         self.data_dir = data_dir
@@ -77,7 +91,7 @@ class EfoIndex():
                 
                 else:
                     if not iri in self.cache:
-                        p_str = ','.join(f"<{i}>" for i in self.equivalent_rels|self.close_rels|self.xref_rels|self.child_rels|self.parent_rels)  # ['owl:equivalentClass', ':exactMatch', ':closeMatch', ':narrowMatch', ':broadMatch', 'rdfs:subClassOf', 'oboInOwl:inSubset']
+                        p_str = ','.join(f"<{i}>" for i in self.equivalent_rels|self.close_rels|self.xref_rels|self.child_rels|self.parent_rels)
                         
                         query = self.efo_graph.query(f"SELECT ?p ?o WHERE {{ ?q ?p ?o . FILTER ( ?p IN({p_str}) )}}", initBindings={'q': rdflib.URIRef(iri)})
                         rels.update({(self.rel_dict[str(p)],o) for p,o in query if isinstance(o, rdflib.term.URIRef)})
@@ -105,9 +119,9 @@ class EfoIndex():
             return related_iris
 
         r = rec_f(iri, distance=distance, related_iris={})
-        r = {str(k):distance-d for k,d in r.items() if not str(k) == str(iri)}
+        r = {str(k):distance-d for k,d in r.items() if not str(k) == str(iri)}  # adjust distances
 
-        return r  # adjust distances
+        return r
 
     def get_efo_links(self, iris, distance=2):
         mappings = {}
@@ -132,14 +146,69 @@ class EfoIndex():
             return None
         
     def gen_rel_indexes(self):
-        p_str = ','.join(f"<{i}>" for i in self.equivalent_rels|self.close_rels|self.xref_rels|self.child_rels|self.parent_rels)  # ['owl:equivalentClass', ':exactMatch', ':closeMatch', ':narrowMatch', ':broadMatch', 'rdfs:subClassOf', 'oboInOwl:inSubset']
+        p_str = ','.join(f"<{i}>" for i in self.equivalent_rels|self.close_rels|self.child_rels|self.parent_rels)  # ['owl:equivalentClass', ':exactMatch', ':closeMatch', ':narrowMatch', ':broadMatch', 'rdfs:subClassOf', 'oboInOwl:inSubset']
         
         self.rels_index = defaultdict(set)
         self.rev_rels_index = defaultdict(set)
-        for s,p,o in tqdm(self.efo_graph.query(f"SELECT ?s ?p ?o WHERE {{ ?s ?p ?o . FILTER ( ?p IN({p_str}) )}}"), leave=True, position=0):
-            if isinstance(s, rdflib.term.URIRef) and isinstance(o, rdflib.term.URIRef):
-                self.rels_index[str(s)].add((self.rel_dict[str(p)],str(o)))
-                self.rev_rels_index[str(o)].add((self.rev_rel_dict[str(p)],str(s)))
+        for p in self.equivalent_rels|self.close_rels|self.child_rels|self.parent_rels:
+            p_iri = rdflib.URIRef(p)
+            for s,o in tqdm(self.efo_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}"), initBindings={'p': p_iri}, leave=True, position=0, desc=str(p)):
+                if isinstance(s, rdflib.term.URIRef) and isinstance(o, rdflib.term.URIRef):
+                    self.rels_index[str(s)].add((self.rel_dict[str(p)],str(o)))
+                    self.rev_rels_index[str(o)].add((self.rev_rel_dict[str(p)],str(s)))
+    
+    def gen_xref_indexes(self):
+        def efo_norm_xref(iri, \
+                          prefix_source_map = {'MESH': 'mesh',
+                                               'MSH': 'mesh',
+                                               'MeSH': 'mesh',
+                                               'SCTID': 'snomed',
+                                               'SCTID_2010_1_31': 'snomed',
+                                               'SNOMEDCT': 'snomed',
+                                               'SNOMEDCT_2010_1_31': 'snomed',
+                                               'SNOMEDCT_US': 'snomed',
+                                               'SNOMEDCT_US_2018_03_01': 'snomed',
+                                               'UMLS': 'umls',
+                                               'UMLS CUI': 'umls',
+                                               'UMLS_CUI': 'umls'
+                                              },\
+                          source_ns_map = {'snomed': 'snomed:',
+                                           'mesh': 'http://id.nlm.nih.gov/mesh/2021/',
+                                           'umls': 'UMLS:'
+                                          }):
+            prefix = iri.split(':')[0]
+            code = ':'.join(iri.split(':')[1:])
+            if prefix in prefix_source_map:
+                source = prefix_source_map[prefix]
+                ns = source_ns_map[source]
+                return (f"{ns}{code}", source)
+        
+        self.xref_index = defaultdict(set)
+        self.rev_xref_index = defaultdict(set)
+        
+        p = "http://www.geneontology.org/formats/oboInOwl#hasDbXref"
+        p_iri = rdflib.URIRef(p)
+        for s,o in tqdm(self.efo_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}", initBindings={'p': p_iri}), leave=True, position=0):
+            if isinstance(s, rdflib.term.URIRef):
+                o = efo_norm_xref(o)
+                self.xref_index[str(s)].add((self.rel_dict[str(p)],str(o)))
+                self.rev_xref_index[str(o)].add((self.rev_rel_dict[str(p)],str(s)))
+    
+        self.xref_index = dict(self.xref_index)
+        self.rev_xref_index = dict(self.rev_xref_index)
+    
+    def gen_name_indexes(self):
+        self.iri2name = defaultdict(set)
+        self.iri2pref_name = {}
+        for p in self.name_labels:
+            p_iri = rdflib.URIRef(p)
+            for s,o in tqdm(self.efo_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}", initBindings={'p': p_iri}), leave=True, position=0, desc=str(p)):
+                if isinstance(s, rdflib.term.URIRef):
+                    self.iri2name[str(s)].add((str(p), str(o)))
+                    if p == self.pref_label:
+                        self.iri2pref_name[str(s)] = str(o)
+                        
+        self.iri2name = dict(self.iri2name)
     
     def save_indexes(self, data_dir=None):
         if data_dir is None:
@@ -149,6 +218,14 @@ class EfoIndex():
             json.dump({k:[list(v) for v in vs] for k,vs in self.rels_index.items()}, f)
         with open(f"{data_dir}/efo_rev_rels_index.json", 'wt') as f:
             json.dump({k:[list(v) for v in vs] for k,vs in self.rev_rels_index.items()}, f)
+        with open(f"{data_dir}/efo_xref_index.json", 'wt') as f:
+            json.dump({k:[list(v) for v in vs] for k,vs in self.xref_index.items()}, f)
+        with open(f"{data_dir}/efo_rev_xref_index.json", 'wt') as f:
+            json.dump({k:[list(v) for v in vs] for k,vs in self.rev_xref_index.items()}, f)
+        with open(f"{data_dir}/efo_iri2name.json", 'wt') as f:
+            json.dump({k:[list(v) for v in vs] for k,vs in self.iri2name.items()}, f)
+        with open(f"{data_dir}/efo_iri2pref_name.json", 'wt') as f:
+            json.dump(self.iri2pref_name, f)
         
     def load_indexes(self, data_dir=None):
         if data_dir is None:
@@ -158,9 +235,44 @@ class EfoIndex():
             self.rels_index = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/efo_rev_rels_index.json", 'rt') as f:
             self.rev_rels_index = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
+        with open(f"{data_dir}/efo_xref_index.json", 'rt') as f:
+            self.xref_index = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
+        with open(f"{data_dir}/efo_rev_xref_index.json", 'rt') as f:
+            self.rev_xref_index = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
+        with open(f"{data_dir}/efo_iri2name.json", 'rt') as f:
+            self.iri2name = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
+        with open(f"{data_dir}/efo_iri2pref_name.json", 'rt') as f:
+            self.iri2pref_name = json.load(f)
     
 
 class MeshIndex():
+    term_rels = {
+        'http://id.nlm.nih.gov/mesh/vocab#term',
+        'http://id.nlm.nih.gov/mesh/vocab#preferredTerm',
+#         'http://id.nlm.nih.gov/mesh/vocab#useInstead', 
+#         'http://id.nlm.nih.gov/mesh/vocab#mappedTo', 
+#         'http://id.nlm.nih.gov/mesh/vocab#preferredMappedTo', 
+#         'http://id.nlm.nih.gov/mesh/vocab#preferredConcept', 
+#         'http://id.nlm.nih.gov/mesh/vocab#concept'
+    }  
+    concept_rels = {
+        'http://id.nlm.nih.gov/mesh/vocab#preferredConcept',
+        'http://id.nlm.nih.gov/mesh/vocab#concept',
+    }
+    child_rels = set()  # 'mesh_vocab:narrowerConcept'
+    parent_rels = {
+        'http://id.nlm.nih.gov/mesh/vocab#parentTreeNumber',
+#         'mesh_vocab:broaderConcept', 
+#         'mesh_vocab:broaderDescriptor', 
+#         'mesh_vocab:hasDescriptor'
+    }  
+    name_labels = {
+        'http://www.w3.org/2000/01/rdf-schema#label',
+        'http://id.nlm.nih.gov/mesh/vocab#altLabel',
+        'http://id.nlm.nih.gov/mesh/vocab#prefLabel'
+    }
+    pref_label = 'http://id.nlm.nih.gov/mesh/vocab#prefLabel'
+    
     def __init__(self, data_dir='.'):
         self.data_dir = data_dir
         
@@ -259,7 +371,7 @@ class MeshIndex():
                 if not search_up:
                     break
 
-        return related_iris
+        return related_iris - {iri}
 
     def get_mesh_name(self, iri):
         try:
@@ -281,6 +393,19 @@ class MeshIndex():
                 
         self.treenumber_index = dict(self.treenumber_index)
         self.iri2treenumber = dict(self.iri2treenumber)
+    
+    def gen_name_indexes(self):
+        self.iri2name = defaultdict(set)
+        self.iri2pref_name = {}
+        for p in self.name_labels:
+            p_iri = rdflib.URIRef(p)
+            for s,o in tqdm(self.mesh_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}", initBindings={'p': p_iri}), leave=True, position=0, desc=str(p)):
+                if isinstance(s, rdflib.term.URIRef):
+                    self.iri2name[str(s)].add((str(p), str(o)))
+                    if p == self.pref_label:
+                        self.iri2pref_name[str(s)] = str(o)
+        
+        self.iri2name = dict(self.iri2name)
         
     def save_indexes(self, data_dir=None):
         if data_dir is None:
@@ -290,6 +415,10 @@ class MeshIndex():
             json.dump({k:[list(v) for v in vs] for k,vs in self.treenumber_index.items()}, f)
         with open(f"{data_dir}/iri2treenumber.json", 'wt') as f:
             json.dump({k:list(vs) for k,vs in self.iri2treenumber.items()}, f)
+        with open(f"{data_dir}/mesh_iri2name.json", 'wt') as f:
+            json.dump({k:[list(v) for v in vs] for k,vs in self.iri2name.items()}, f)
+        with open(f"{data_dir}/mesh_iri2pref_name.json", 'wt') as f:
+            json.dump(self.iri2pref_name, f)
         
     def load_indexes(self, data_dir=None):
         if data_dir is None:
@@ -299,3 +428,126 @@ class MeshIndex():
             self.treenumber_index = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/iri2treenumber.json", 'rt') as f:
             self.iri2treenumber = {k:set(vs) for k,vs in json.load(f).items()}
+        with open(f"{data_dir}/mesh_iri2name.json", 'rt') as f:
+            self.iri2name = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
+        with open(f"{data_dir}/mesh_iri2pref_name.json", 'rt') as f:
+            self.iri2pref_name = json.load(f)
+        
+        
+class UmlsIndex():
+    name = "umls"
+    pref_label = 'umls:cui_pref_string'
+    name_labels = {
+        'umls:cui_string', 
+        'umls:cui_pref_string'
+    }
+    relevant_root_nodes = set()
+    child_rels = set()
+    parent_rels = set()
+    equivalent_rels = {
+        'umls:same_cui'
+    }
+    xref_rels = set()
+    
+    pred_types = {
+        'umls:same_cui': {'equivalent'},
+        'umls:cui_string': {'name'},
+        'umls:cui_pref_string': {'name', 'pref_label'}
+    }
+    
+    def __init__(self, filepath=None, data_dir='.'):
+        self.data_dir = data_dir
+        self.filepath = filepath
+        
+        try:
+            self.load_indexes()
+        except:
+            pass
+            
+    def gen_terms_and_rel_indexes(self, filepath=None):
+        if filepath is None:
+            filepath = self.filepath
+            
+        def gen_iri(source, code, source_name_map={'MSH': 'http://id.nlm.nih.gov/mesh/2021/', 'SNOMEDCT_US': 'snomed:'}):
+            if source in source_name_map:
+                prefix = source_name_map[source]
+                return f"{prefix}{code}"
+        
+        def clean_line(l):
+            line = l.decode('utf-8')
+            while True:
+                if line[-1] in {'\n', '\r'}: 
+                    line = line[:-1]
+                else:
+                    break
+            return line
+
+#         cui_terms = defaultdict(list)
+        sources = set()
+        equivalent_entities = defaultdict(set)
+        cui_terms = defaultdict(list)
+        
+        cols = ['CUI','LAT','TS','LUI','STT','SUI','ISPREF','AUI','SAUI','SCUI','SDUI','SAB','TTY','CODE','STR','SRL','SUPPRESS','CVF']
+        
+#         with tarfile.open(self.filepath, 'r:') as tf:
+#             for member in tf.getmembers():
+#                 if re.match('^.*?META/MRCONSO\.RRF$', member.name):
+#                     for line in (clean_line(l) for l in tf.extractfile(member)):
+        with zipfile.ZipFile(filepath) as f:
+            with f.open(name='MRCONSO.RRF') as df:
+                for line in tqdm((clean_line(l) for l in df), leave=True, position=0, desc='Extracting file'):
+                    row_dict = {cols[i]:v for i,v in enumerate(line.split('|')) if i < len(cols)}
+                    cui = f"UMLS:{row_dict['CUI']}"
+                    if str(row_dict['LAT']) == 'ENG':  # only english
+
+#                             sources.add(row_dict['SAB'])  # keep track of what sources are present
+                        cui_terms[cui].append({'string': row_dict['STR'], \
+                                               'source': row_dict['SAB'], \
+                                               'string_type': row_dict['STT'], \
+                                               'is_pref': row_dict['ISPREF'], \
+                                               'term_status': row_dict['TS'], \
+                                               'term_type_in_source': row_dict['TTY']})
+
+                        iri = gen_iri(row_dict['SAB'], row_dict['CODE'])
+                        if iri:
+                            equivalent_entities[cui].add(iri)
+
+        self.entity_rels = defaultdict(set)
+        self.iri2name = defaultdict(set)
+        self.iri2pref_name = {}
+        for cui, iris in tqdm(equivalent_entities.items(), leave=True, position=0, desc='Processing data'):
+            for iri1, iri2 in it.permutations(iris,2):
+                self.entity_rels[iri1].add(('umls:same_cui', iri2))
+            for iri in iris:
+                for v in cui_terms[cui]:
+                    if v['is_pref']=='Y':
+                        self.iri2name[iri].add(('umls:cui_pref_string', v['string_type'], v['string']))
+                        self.iri2pref_name[iri] = v['string']
+                    else:
+                        self.iri2name[iri].add(('umls:cui_string', v['string_type'], v['string']))
+        
+        self.entity_rels = dict(self.entity_rels)
+        self.iri2name = dict(self.iri2name)
+    
+    
+    def save_indexes(self, data_dir=None):
+        if data_dir is None:
+            data_dir = self.data_dir
+            
+        with open(f"{data_dir}/umls_entity_rels.json", 'wt') as f:
+            json.dump({k:[list(v) for v in vs] for k,vs in self.entity_rels.items()}, f)
+        with open(f"{data_dir}/umls_iri2name.json", 'wt') as f:
+            json.dump({k:[list(v) for v in vs] for k,vs in self.iri2name.items()}, f)
+        with open(f"{data_dir}/umls_iri2pref_name.json", 'wt') as f:
+            json.dump(self.iri2pref_name, f)
+        
+    def load_indexes(self, data_dir=None):
+        if data_dir is None:
+            data_dir = self.data_dir
+            
+        with open(f"{data_dir}/umls_entity_rels.json", 'rt') as f:
+            self.entity_rels = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
+        with open(f"{data_dir}/umls_iri2name.json", 'rt') as f:
+            self.iri2name = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
+        with open(f"{data_dir}/umls_iri2pref_name.json", 'rt') as f:
+            self.iri2pref_name = json.load(f)
