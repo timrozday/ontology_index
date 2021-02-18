@@ -1,1 +1,1 @@
-from .onto_index import EfoIndex, MeshIndex
+from .onto_index import EfoIndex, MeshIndex, UmlsIndex
