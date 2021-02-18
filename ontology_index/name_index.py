@@ -1,4 +1,5 @@
 import re
+import json
 from collections import defaultdict
 from .onto_index import EfoIndex, MeshIndex, UmlsIndex
 
