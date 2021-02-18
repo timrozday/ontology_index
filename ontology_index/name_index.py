@@ -68,6 +68,11 @@ class NameIndex():
         s = re.sub('[/\-]', ' ', s)
         s = re.sub('[^a-z., ]', '', s)
         s = re.sub('(\s|^)\.\s', ' ', s)
+        
+        if s[-5:] == ', nos':
+            s = normalise_whitespace(s[:-5])
+        if s[-4:] == ',nos':
+            s = normalise_whitespace(s[:-4])
 
         return s
     
