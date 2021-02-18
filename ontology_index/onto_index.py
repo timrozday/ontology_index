@@ -515,11 +515,11 @@ class UmlsIndex():
         self.entity_rels = defaultdict(set)
         self.iri2name = defaultdict(set)
         self.iri2pref_name = {}
-        for cui, iris in tqdm(equivalent_entities.items(), leave=True, position=0, desc='Processing data'):
+        for cui,iris in tqdm(equivalent_entities.items(), leave=True, position=0, desc='Processing rels'):
             for iri1, iri2 in it.permutations(iris,2):
                 self.entity_rels[iri1].add(('umls:same_cui', iri2))
         
-        for cui,vs in cui_terms.items():
+        for cui,vs in tqdm(cui_terms.items(), leave=True, position=0, desc='Processing names'):
             for v in vs:
                 if v['is_pref']=='Y':
                     self.iri2name[cui].add(('umls:cui_pref_string', v['string_type'], v['string']))
