@@ -518,13 +518,14 @@ class UmlsIndex():
         for cui, iris in tqdm(equivalent_entities.items(), leave=True, position=0, desc='Processing data'):
             for iri1, iri2 in it.permutations(iris,2):
                 self.entity_rels[iri1].add(('umls:same_cui', iri2))
-            for iri in iris:
-                for v in cui_terms[cui]:
-                    if v['is_pref']=='Y':
-                        self.iri2name[iri].add(('umls:cui_pref_string', v['string_type'], v['string']))
-                        self.iri2pref_name[iri] = v['string']
-                    else:
-                        self.iri2name[iri].add(('umls:cui_string', v['string_type'], v['string']))
+        
+        for cui,vs in cui_terms.items():
+            for v in vs:
+                if v['is_pref']=='Y':
+                    self.iri2name[cui].add(('umls:cui_pref_string', v['string_type'], v['string']))
+                    self.iri2pref_name[cui] = v['string']
+                else:
+                    self.iri2name[cui].add(('umls:cui_string', v['string_type'], v['string']))
         
         self.entity_rels = dict(self.entity_rels)
         self.iri2name = dict(self.iri2name)
