@@ -13,12 +13,23 @@ class NameIndex():
         'VW': 'umls:word_order_variant',
     }
 
-    def __init__(self, data_dir='.'):
+    def __init__(self, data_dir='.', efo_index=None, mesh_index=None, umls_index=None):
         self.data_dir = data_dir
         
-        self.efo_index = EfoIndex(data_dir=self.data_dir)
-        self.mesh_index = MeshIndex(data_dir=self.data_dir)
-        self.umls_index = UmlsIndex(filepath=None, data_dir=self.data_dir)
+        if efo_index:
+            self.efo_index = efo_index
+        else:
+            self.efo_index = EfoIndex(data_dir=self.data_dir)
+            
+        if mesh_index:
+            self.mesh_index = mesh_index
+        else:
+            self.mesh_index = MeshIndex(data_dir=self.data_dir)
+            
+        if umls_index:
+            self.umls_index = umls_index
+        else:
+            self.umls_index = UmlsIndex(filepath=None, data_dir=self.data_dir)
         
         try:
             self.load_indexes()
