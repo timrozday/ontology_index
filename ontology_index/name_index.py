@@ -111,7 +111,7 @@ class NameIndex():
         if data_dir is None:
             data_dir = self.data_dir
         
-        with open(f'{data_dir}/data/name_index.json', 'wt') as f:
+        with open(f'{data_dir}/name_index.json', 'wt') as f:
             json.dump({k:[list(v) for v in vs] for k,vs in self.name_index.items()}, f)
             
     def load_indexes(self, data_dir=None):
