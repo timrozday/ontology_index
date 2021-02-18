@@ -38,7 +38,7 @@ class NameIndex():
             pass
         
     
-    def filter_name(s):
+    def filter_name(self,s):
         def normalise_whitespace(s):
             s = re.sub('\s+', ' ', s)
             s = re.sub('\s+$', '', s)
