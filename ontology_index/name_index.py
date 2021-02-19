@@ -5,14 +5,6 @@ from .onto_index import EfoIndex, MeshIndex, UmlsIndex
 from tqdm.auto import tqdm
 
 class NameIndex():
-    
-    umls_name_types = {
-        'PF': 'umls:pref_term',
-        'VCW': 'umls:case_word_order_variant',
-        'VC': 'umls:case_variant',
-        'VO': 'umls:variant',
-        'VW': 'umls:word_order_variant',
-    }
 
     def __init__(self, data_dir='.', efo_index=None, mesh_index=None, umls_index=None):
         self.data_dir = data_dir
@@ -104,7 +96,7 @@ class NameIndex():
         for iri, d in tqdm(self.umls_index.iri2name.items(), leave=True, position=0):
             for name_type, umls_name_type, name in d:
                 filtered_name = self.filter_name(name)
-                name_type = self.umls_name_types[umls_name_type]
+                name_type = self.umls_index.name_types[umls_name_type]
                 self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
                 
     def save_indexes(self, data_dir=None):
