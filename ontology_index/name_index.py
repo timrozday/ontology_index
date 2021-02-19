@@ -118,3 +118,25 @@ class NameIndex():
             q  = self.filter_name(q)
         if q in self.name_index:
             return self.name_index[q]
+        
+    def get_name(self, iri):
+        try:
+            name = self.efo_index.get_name(iri)
+            if name:
+                return name
+        except:
+            pass
+
+        try:
+            name = self.mesh_index.get_name(iri)
+            if name:
+                return name
+        except:
+            pass
+
+        try:
+            name = self.umls_index.get_name(iri)
+            if name:
+                return name
+        except:
+            pass
