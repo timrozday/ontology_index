@@ -161,7 +161,7 @@ class EfoIndex():
         if iri in self.iri2pref_name and self.iri2pref_name[iri]:
             return self.iri2pref_name[iri]
         
-        if iri in iri2name and self.iri2name[iri]:
+        if iri in self.iri2name and self.iri2name[iri]:
             return sorted([(p,n) for p,n in self.iri2name[iri]], key=lambda x:(self.name_ranks[x[0]], len(x[1])) )[0][1]
     
     def gen_rel_indexes(self):
@@ -410,7 +410,7 @@ class MeshIndex():
         if iri in self.iri2pref_name and self.iri2pref_name[iri]:
             return self.iri2pref_name[iri]
         
-        if iri in iri2name and self.iri2name[iri]:
+        if iri in self.iri2name and self.iri2name[iri]:
             return sorted([(p,n) for p,n in self.iri2name[iri]], key=lambda x:(self.name_ranks[x[0]], len(x[1])) )[0][1]
 
     def gen_treenumber_indexes(self):
@@ -584,7 +584,7 @@ class UmlsIndex():
         if iri in self.iri2pref_name and self.iri2pref_name[iri]:
             return self.iri2pref_name[iri]
         
-        if iri in iri2name and self.iri2name[iri]:
+        if iri in self.iri2name and self.iri2name[iri]:
             return sorted([(p,n) for _,p,n in self.iri2name[iri]], key=lambda x:(self.name_ranks[x[0]], len(x[1])) )[0][1]
     
     
