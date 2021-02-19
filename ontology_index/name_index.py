@@ -110,14 +110,14 @@ class NameIndex():
             data_dir = self.data_dir
         
         with open(f'{data_dir}/name_index.json', 'wt') as f:
-            json.dump({k:[list(v) for v in vs] for k,vs in self.name_index.items()}, f)
+            json.dump({k:list(vs) for k,vs in self.name_index.items()}, f)
             
     def load_indexes(self, data_dir=None):
         if data_dir is None:
             data_dir = self.data_dir
             
         with open(f'{data_dir}/name_index.json', 'rt') as f:
-            self.name_index = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
+            self.name_index = {k:set(vs) for k,vs in json.load(f).items()}
             
     def query(self, q, filter_query=True):
         if filter_query:
