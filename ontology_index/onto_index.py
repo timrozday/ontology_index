@@ -39,6 +39,19 @@ class EfoIndex():
     }
     pref_label = 'http://www.w3.org/2000/01/rdf-schema#label'
     
+    name_ranks = {
+        'http://www.w3.org/2000/01/rdf-schema#label': 1,
+        'http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#prefLabel': 2,
+        'http://www.geneontology.org/formats/oboInOwl#hasExactSynonym': 3,
+        'http://www.geneontology.org/formats/oboInOwl#shorthand': 4,
+        'http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym': 5,
+        'http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym': 6,
+        'http://www.geneontology.org/formats/oboInOwl#hasNarrowSynonym': 7,
+        'http://purl.obolibrary.org/obo/SRA_label': 8,
+        'http://purl.obolibrary.org/obo/ArrayExpress_label': 9,
+        'http://purl.obolibrary.org/obo/IAO_0100001': 10,
+    }
+    
     def __init__(self, data_dir='.'):
         self.data_dir = data_dir
         
@@ -137,14 +150,20 @@ class EfoIndex():
                         links[tuple(sorted([s_iri,t_iri]))].add(d)
 
         return {(k1,k2,min(vs)) for (k1,k2),vs in links.items()}
-
-    def get_efo_name(self, iri):
-        try:
-            query = self.efo_graph.query(f"SELECT ?o WHERE {{ ?q <http://www.w3.org/2000/01/rdf-schema#label> ?o }}", initBindings={'q': rdflib.URIRef(iri)})
-            return str(list(query)[0][0])
-        except:
-            return None
+    
+    def get_name(self, iri):
+#         try:
+#             query = self.efo_graph.query(f"SELECT ?o WHERE {{ ?q <http://www.w3.org/2000/01/rdf-schema#label> ?o }}", initBindings={'q': rdflib.URIRef(iri)})
+#             return str(list(query)[0][0])
+#         except:
+#             return None
         
+        if iri in self.iri2pref_name and self.iri2pref_name[iri]:
+            return self.iri2pref_name[iri]
+        
+        if iri in iri2name and self.iri2name[iri]:
+            return sorted([(p,n) for p,n in self.iri2name[iri]], key=lambda x:(self.name_ranks[x[0]], len(x[1])) )[0][1]
+    
     def gen_rel_indexes(self):
         p_str = ','.join(f"<{i}>" for i in self.equivalent_rels|self.close_rels|self.child_rels|self.parent_rels)  # ['owl:equivalentClass', ':exactMatch', ':closeMatch', ':narrowMatch', ':broadMatch', 'rdfs:subClassOf', 'oboInOwl:inSubset']
         
@@ -273,6 +292,14 @@ class MeshIndex():
     }
     pref_label = 'http://id.nlm.nih.gov/mesh/vocab#prefLabel'
     
+    
+    name_ranks = {
+        'http://id.nlm.nih.gov/mesh/vocab#prefLabel': 1,
+        'http://www.w3.org/2000/01/rdf-schema#label': 2,
+        'http://id.nlm.nih.gov/mesh/vocab#altLabel': 3,
+    }
+        
+    
     def __init__(self, data_dir='.'):
         self.data_dir = data_dir
         
@@ -373,12 +400,18 @@ class MeshIndex():
 
         return related_iris - {iri}
 
-    def get_mesh_name(self, iri):
-        try:
-            query = self.mesh_graph.query(f"SELECT ?o WHERE {{ ?q <http://www.w3.org/2000/01/rdf-schema#label> ?o }}", initBindings={'q': rdflib.URIRef(iri)})
-            return str(list(query)[0][0])
-        except:
-            return None
+    def get_name(self, iri):
+#         try:
+#             query = self.mesh_graph.query(f"SELECT ?o WHERE {{ ?q <http://www.w3.org/2000/01/rdf-schema#label> ?o }}", initBindings={'q': rdflib.URIRef(iri)})
+#             return str(list(query)[0][0])
+#         except:
+#             return None
+        
+        if iri in self.iri2pref_name and self.iri2pref_name[iri]:
+            return self.iri2pref_name[iri]
+        
+        if iri in iri2name and self.iri2name[iri]:
+            return sorted([(p,n) for p,n in self.iri2name[iri]], key=lambda x:(self.name_ranks[x[0]], len(x[1])) )[0][1]
 
     def gen_treenumber_indexes(self):
         self.treenumber_index = defaultdict(set)
@@ -455,6 +488,22 @@ class UmlsIndex():
         'umls:cui_pref_string': {'name', 'pref_label'}
     }
     
+    name_ranks = {
+        'PF': 1,
+        'VC': 2,
+        'VW': 3,
+        'VCW': 4,
+        'VO': 5
+    }
+    
+    name_types = {
+        'PF': 'umls:pref_term',
+        'VCW': 'umls:case_word_order_variant',
+        'VC': 'umls:case_variant',
+        'VO': 'umls:variant',
+        'VW': 'umls:word_order_variant',
+    }
+    
     def __init__(self, filepath=None, data_dir='.'):
         self.data_dir = data_dir
         self.filepath = filepath
@@ -529,6 +578,14 @@ class UmlsIndex():
         
         self.entity_rels = dict(self.entity_rels)
         self.iri2name = dict(self.iri2name)
+    
+    
+    def get_name(self, iri):
+        if iri in self.iri2pref_name and self.iri2pref_name[iri]:
+            return self.iri2pref_name[iri]
+        
+        if iri in iri2name and self.iri2name[iri]:
+            return sorted([(p,n) for _,p,n in self.iri2name[iri]], key=lambda x:(self.name_ranks[x[0]], len(x[1])) )[0][1]
     
     
     def save_indexes(self, data_dir=None):
