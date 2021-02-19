@@ -28,7 +28,14 @@ class NameIndex():
             self.load_indexes()
         except:
             pass
-        
+    
+    exclude_suffixes = {
+        ', nos',
+        ',nos',
+        ', not otherwise specified',
+        ', unspecified',
+        ', not elsewhere classified'
+    }
     
     def filter_name(self,s):
         def normalise_whitespace(s):
@@ -73,10 +80,9 @@ class NameIndex():
         s = re.sub('[^a-z., ]', '', s)
         s = re.sub('(\s|^)\.\s', ' ', s)
         
-        if s[-5:] == ', nos':
-            s = normalise_whitespace(s[:-5])
-        if s[-4:] == ',nos':
-            s = normalise_whitespace(s[:-4])
+        for suffix in self.exclude_suffixes:
+            if s[-len(suffix):] == suffix:
+                s = normalise_whitespace(s[:-len(suffix)])
 
         return s
     
