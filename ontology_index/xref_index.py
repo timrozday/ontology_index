@@ -68,11 +68,11 @@ class XrefIndex():
         
         r = self.efo_index.get_xrefs(iri)
         if r:
-            xrefs.update(r)
+            xrefs.update({o for p,o in r})
         
         r = self.umls_index.get_xrefs(iri)
         if r:
-            xrefs.update(r)
+            xrefs.update({o for p,o in r})
         
         if equivalents:
             try:
