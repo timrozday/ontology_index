@@ -41,8 +41,9 @@ class XrefIndex():
         
         for c in candidates:
             c_names = {n for n,_,_ in self.name_index.get_names(c)}
-            overlap = {self.name_index.filter_name(n) for n in c_names} & filtered_iri_names
-            scores = [len(overlap)/len(c_names), len(overlap)/len(iri_names)]
+            filtered_c_names = {self.name_index.filter_name(n) for n in c_names}
+            overlap = filtered_c_names & filtered_iri_names
+            scores = [len(overlap)/len(filtered_c_names), len(overlap)/len(filtered_iri_names)]
             yield (
                 c,
                 max(scores),
