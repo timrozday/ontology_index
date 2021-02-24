@@ -32,7 +32,12 @@ class XrefIndex():
             pass
     
     def name_xref(self, iri):
-        iri_names = {n for n,_,_ in self.name_index.get_names(iri)}
+        r = self.name_index.get_names(iri)
+        if r:
+            iri_names = {n for n,_,_ in r}
+        else:
+            iri_names = set()
+            
         candidates = set()
         for n in iri_names:
             candidates.update(self.name_index.query(n))
@@ -40,7 +45,12 @@ class XrefIndex():
         filtered_iri_names = {self.name_index.filter_name(n) for n in iri_names}
         
         for c in candidates:
-            c_names = {n for n,_,_ in self.name_index.get_names(c)}
+            r = self.name_index.get_names(c)
+            if r:
+                c_names = {n for n,_,_ in r}
+            else:
+                c_names = set()
+                
             filtered_c_names = {self.name_index.filter_name(n) for n in c_names}
             overlap = filtered_c_names & filtered_iri_names
             scores = [len(overlap)/len(filtered_c_names), len(overlap)/len(filtered_iri_names)]
