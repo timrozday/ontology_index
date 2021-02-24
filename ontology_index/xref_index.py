@@ -75,14 +75,20 @@ class XrefIndex():
             xrefs.update(r)
         
         if equivalents:
-            r = self.efo_index.get_distant_efo_relatives(iri, distance=0, distant_rels={'close', 'child', 'parent'}, equivalent_rels={'equivalent'})
-            if r:
-                xrefs.update(r)
-
-            r = self.mesh_index.get_distant_mesh_relatives(iri, distance=0, search_up=True)
-            if r:
-                xrefs.update(r)
-        
+            try:
+                r = self.efo_index.get_distant_efo_relatives(iri, distance=0, distant_rels={'close', 'child', 'parent'}, equivalent_rels={'equivalent'})
+                if r:
+                    xrefs.update(r)
+            except:
+                pass
+            
+            try:
+                r = self.mesh_index.get_distant_mesh_relatives(iri, distance=0, search_up=True)
+                if r:
+                    xrefs.update(r)
+            except:
+                pass
+            
         return xrefs
         
     
