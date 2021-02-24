@@ -43,12 +43,14 @@ class XrefIndex():
             c_names = {n for n,_,_ in self.name_index.get_names(c)}
             overlap = {self.name_index.filter_name(n) for n in c_names} & filtered_iri_names
             scores = [len(overlap)/len(c_names), len(overlap)/len(iri_names)]
-            yield c, \  # iri
-                  max(scores), \  # scores
-                  min(scores), \
-                  iri_names, \  # details
-                  c_names, \
-                  overlap
+            yield (
+                c,
+                max(scores),
+                min(scores),
+                iri_names,
+                c_names,
+                overlap
+            )
     
     def ontology_xref(self, iri):
         xrefs = set()
