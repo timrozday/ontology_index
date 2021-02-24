@@ -78,7 +78,7 @@ class XrefIndex():
                     if max_score >= name_xref_score_threshold:
                         xrefs.add(m)  # name-based xrefs
             
-        new_xrefs = iris - xrefs
+        new_xrefs = xrefs - iris
         
         if new_xrefs and not (jumps==0 or jumps==1):
             xrefs.update(self.get_xrefs(new_xrefs, jumps=jumps-1, ontology_based=ontology_based, name_based=name_based, name_xref_score_threshold=name_xref_score_threshold))
