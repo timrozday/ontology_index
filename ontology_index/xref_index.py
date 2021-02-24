@@ -24,7 +24,7 @@ class XrefIndex():
         if name_index:
             self.name_index = name_index
         else:
-            self.name_index = NameIndex(filepath=None, data_dir=self.data_dir, efo_index=efo_index, mesh_index=mesh_index, umls_index=umls_index)
+            self.name_index = NameIndex(data_dir=self.data_dir, efo_index=efo_index, mesh_index=mesh_index, umls_index=umls_index)
         
         try:
             self.load_indexes()
