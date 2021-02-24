@@ -63,7 +63,7 @@ class XrefIndex():
                 overlap
             )
     
-    def ontology_xref(self, iri):
+    def ontology_xref(self, iri, equivalents=True):
         xrefs = set()
         
         r = self.efo_index.get_xrefs(iri)
@@ -74,10 +74,19 @@ class XrefIndex():
         if r:
             xrefs.update(r)
         
+        if equivalents:
+            r = self.efo_index.get_distant_efo_relatives(iri, distance=0, distant_rels={'close', 'child', 'parent'}, equivalent_rels={'equivalent'})
+            if r:
+                xrefs.update(r)
+
+            r = self.mesh_index.get_distant_mesh_relatives(iri, distance=0, search_up=True)
+            if r:
+                xrefs.update(r)
+        
         return xrefs
         
     
-    def get_xrefs(self, iris, covered_iris=None, jumps=1, ontology_based=True, name_based=True, name_xref_score_threshold=0.2):
+    def get_xrefs(self, iris, covered_iris=None, jumps=1, ontology_based=True, name_based=True, name_xref_score_threshold=0.2, equivalents=True):
         if isinstance(iris, str):
             iris = {iris}
         iris = set(iris)
@@ -89,7 +98,7 @@ class XrefIndex():
         
         for iri in iris:
             if ontology_based:
-                xrefs.update(self.ontology_xref(iri))  # ontology xrefs
+                xrefs.update(self.ontology_xref(iri, equivalents=equivalents))  # ontology xrefs
             if name_based:
                 for m, max_score, min_score, _, _, _ in self.name_xref(iri):
                     if max_score >= name_xref_score_threshold:
