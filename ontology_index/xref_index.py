@@ -77,7 +77,14 @@ class XrefIndex():
         return xrefs
         
     
-    def get_xrefs(self, iris, jumps=1, ontology_based=True, name_based=True, name_xref_score_threshold=0.2):
+    def get_xrefs(self, iris, covered_iris=None, jumps=1, ontology_based=True, name_based=True, name_xref_score_threshold=0.2):
+        if isinstance(iris, str):
+            iris = {iris}
+        iris = set(iris)
+        
+        if covered_iris is None:
+            covered_iris = iris
+        
         xrefs = set()
         
         for iri in iris:
@@ -88,10 +95,19 @@ class XrefIndex():
                     if max_score >= name_xref_score_threshold:
                         xrefs.add(m)  # name-based xrefs
             
-        new_xrefs = xrefs - iris
+        new_xrefs = xrefs - covered_iris
         
         if new_xrefs and not (jumps==0 or jumps==1):
-            xrefs.update(self.get_xrefs(new_xrefs, jumps=jumps-1, ontology_based=ontology_based, name_based=name_based, name_xref_score_threshold=name_xref_score_threshold))
+            xrefs.update(
+                self.get_xrefs(
+                    new_xrefs, 
+                    covered_iris=covered_iris|xrefs, 
+                    jumps=jumps-1, 
+                    ontology_based=ontology_based, 
+                    name_based=name_based, 
+                    name_xref_score_threshold=name_xref_score_threshold
+                )
+            )
             
         return xrefs
         
