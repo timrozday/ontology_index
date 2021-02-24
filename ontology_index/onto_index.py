@@ -170,9 +170,9 @@ class EfoIndex():
     def get_xrefs(self, iri):
         xrefs = set()
         if iri in self.xref_index:
-            xrefs.update({o for p,(o,s) in self.xref_index[iri]})
+            xrefs.update({o for p,o in self.xref_index[iri]})
         if iri in self.rev_xref_index:
-            xrefs.update({o for p,(o,s) in self.rev_xref_index[iri]})
+            xrefs.update({o for p,o in self.rev_xref_index[iri]})
         return xrefs
     
     def gen_rel_indexes(self):
@@ -211,7 +211,7 @@ class EfoIndex():
             if prefix in prefix_source_map:
                 source = prefix_source_map[prefix]
                 ns = source_ns_map[source]
-                return (f"{ns}{code}", source)
+                return f"{ns}{code}"
         
         self.xref_index = defaultdict(set)
         self.rev_xref_index = defaultdict(set)
