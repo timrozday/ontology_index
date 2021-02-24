@@ -78,14 +78,14 @@ class XrefIndex():
             try:
                 r = self.efo_index.get_distant_efo_relatives(iri, distance=0, distant_rels={'close', 'child', 'parent'}, equivalent_rels={'equivalent'})
                 if r:
-                    xrefs.update(r)
+                    xrefs.update(r.keys())
             except:
                 pass
             
             try:
-                r = self.mesh_index.get_distant_mesh_relatives(iri, distance=0, search_up=True)
+                r = self.mesh_index.get_distant_mesh_relatives(iri.split('/')[-1], distance=0, search_up=True)
                 if r:
-                    xrefs.update(r)
+                    xrefs.update({f"http://id.nlm.nih.gov/mesh/2021/{i}" for i in r})
             except:
                 pass
             
