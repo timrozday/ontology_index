@@ -56,8 +56,13 @@ class XrefIndex():
     def ontology_xref(self, iri):
         xrefs = set()
         
-        xrefs.update(self.efo_index.get_xrefs(iri))
-        xrefs.update(self.umls_index.get_xrefs(iri))
+        r = self.efo_index.get_xrefs(iri)
+        if r:
+            xrefs.update(r)
+        
+        r = self.umls_index.get_xrefs(iri)
+        if r:
+            xrefs.update(r)
         
         return xrefs
         
