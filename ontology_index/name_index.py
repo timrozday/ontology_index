@@ -146,3 +146,26 @@ class NameIndex():
                 return name
         except:
             pass
+        
+    def get_names(self, iri):
+        try:
+            names = self.efo_index.get_names(iri)
+            if names:
+                return names
+        except:
+            pass
+
+        try:
+            names = self.mesh_index.get_names(iri)
+            if names:
+                return names
+        except:
+            pass
+
+        try:
+            names = self.umls_index.get_names(iri)
+            if names:
+                return names
+        except:
+            pass
+        
