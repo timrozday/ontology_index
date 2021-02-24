@@ -163,6 +163,17 @@ class EfoIndex():
         
         if iri in self.iri2name and self.iri2name[iri]:
             return sorted([(p,n) for p,n in self.iri2name[iri]], key=lambda x:(self.name_ranks[x[0]], len(x[1])) )[0][1]
+        
+    def get_names(self, iri):
+        return {(n,p,self.name_ranks[p]) for p,n in self.iri2name[iri]}
+    
+    def get_xrefs(self, iri):
+        xrefs = set()
+        if iri in self.xref_index:
+            xrefs.update({s for p,s in self.xref_index[iri]})
+        if iri in self.rev_xref_index:
+            xrefs.update({s for p,s in self.rev_xref_index[iri]})
+        return xrefs
     
     def gen_rel_indexes(self):
         p_str = ','.join(f"<{i}>" for i in self.equivalent_rels|self.close_rels|self.child_rels|self.parent_rels)  # ['owl:equivalentClass', ':exactMatch', ':closeMatch', ':narrowMatch', ':broadMatch', 'rdfs:subClassOf', 'oboInOwl:inSubset']
@@ -413,6 +424,9 @@ class MeshIndex():
         if iri in self.iri2name and self.iri2name[iri]:
             return sorted([(p,n) for p,n in self.iri2name[iri]], key=lambda x:(self.name_ranks[x[0]], len(x[1])) )[0][1]
 
+    def get_names(self, iri):
+        return {(n,p,self.name_ranks[p]) for p,n in self.iri2name[iri]}
+        
     def gen_treenumber_indexes(self):
         self.treenumber_index = defaultdict(set)
         self.iri2treenumber = defaultdict(set)
@@ -579,7 +593,6 @@ class UmlsIndex():
         self.entity_rels = dict(self.entity_rels)
         self.iri2name = dict(self.iri2name)
     
-    
     def get_name(self, iri):
         if iri in self.iri2pref_name and self.iri2pref_name[iri]:
             return self.iri2pref_name[iri]
@@ -587,6 +600,12 @@ class UmlsIndex():
         if iri in self.iri2name and self.iri2name[iri]:
             return sorted([(p,n) for _,p,n in self.iri2name[iri]], key=lambda x:(self.name_ranks[x[0]], len(x[1])) )[0][1]
     
+    def get_names(self, iri):
+        return {(n,p,self.name_ranks[p]) for _,p,n in self.iri2name[iri]}
+    
+    def get_xrefs(self, iri):
+        if iri in self.entity_rels:
+            return self.entity_rels[iri]
     
     def save_indexes(self, data_dir=None):
         if data_dir is None:
