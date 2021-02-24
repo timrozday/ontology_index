@@ -170,9 +170,9 @@ class EfoIndex():
     def get_xrefs(self, iri):
         xrefs = set()
         if iri in self.xref_index:
-            xrefs.update({o for p,o in self.xref_index[iri]})
+            xrefs.update(self.xref_index[iri])
         if iri in self.rev_xref_index:
-            xrefs.update({o for p,o in self.rev_xref_index[iri]})
+            xrefs.update(self.rev_xref_index[iri])
         return xrefs
     
     def gen_rel_indexes(self):
