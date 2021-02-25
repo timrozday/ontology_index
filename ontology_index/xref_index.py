@@ -31,7 +31,7 @@ class XrefIndex():
         except:
             pass
     
-    def name_xref(self, iri, min_length=4):
+    def name_xref(self, iri, min_length=5):
         def get_names(iri):
             r = self.name_index.get_names(iri)
             if r:
@@ -102,7 +102,7 @@ class XrefIndex():
         return xrefs
         
     
-    def get_xrefs(self, iris, covered_iris=None, jumps=1, ontology_based=True, name_based=True, name_xref_score_threshold=0.2, equivalents=True):
+    def get_xrefs(self, iris, covered_iris=None, jumps=1, ontology_based=True, name_based=True, name_xref_score_threshold=0.2, equivalents=True, min_name_length=5):
         if isinstance(iris, str):
             iris = {iris}
         iris = set(iris)
@@ -116,7 +116,7 @@ class XrefIndex():
             if ontology_based:
                 xrefs.update(self.ontology_xref(iri, equivalents=equivalents))  # ontology xrefs
             if name_based:
-                for m, max_score, min_score, _, _, _ in self.name_xref(iri):
+                for m, max_score, min_score, _, _, _ in self.name_xref(iri, min_length=min_name_length):
                     if max_score >= name_xref_score_threshold:
                         xrefs.add(m)  # name-based xrefs
             
@@ -130,7 +130,8 @@ class XrefIndex():
                     jumps=jumps-1, 
                     ontology_based=ontology_based, 
                     name_based=name_based, 
-                    name_xref_score_threshold=name_xref_score_threshold
+                    name_xref_score_threshold=name_xref_score_threshold,
+                    min_name_length=min_name_length
                 )
             )
             
