@@ -45,9 +45,14 @@ class XrefIndex():
         filtered_iri_names = {self.name_index.filter_name(n) for n in iri_names}
         
         for c in candidates:
-            r = self.name_index.get_names(c)
+            r, names_source = self.name_index.get_names(c)
             if r:
-                c_names = {n for n,_,_ in r}
+                if names_source == 'efo':
+                    c_names = {n for n,p,s in r if s >= 4}
+                if names_source == 'mesh':
+                    c_names = {n for n,p,s in r if s >= 3}  # all
+                if names_source == 'umls':
+                    c_names = {n for n,p,s in r if s >= 5}  # all
             else:
                 c_names = set()
                 
