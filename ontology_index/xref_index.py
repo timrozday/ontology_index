@@ -37,11 +37,11 @@ class XrefIndex():
             if r:
                 names, names_source = r
                 if names_source == 'efo':
-                    iri_names = {n for n,p,s in names if s >= 4}
+                    iri_names = {n for n,p,s in names if s <= 4}
                 if names_source == 'mesh':
-                    iri_names = {n for n,p,s in names if s >= 3}  # all
+                    iri_names = {n for n,p,s in names if s <= 3}  # all
                 if names_source == 'umls':
-                    iri_names = {n for n,p,s in names if s >= 5}  # all
+                    iri_names = {n for n,p,s in names if s <= 5}  # all
             else:
                 iri_names = set()
                 
