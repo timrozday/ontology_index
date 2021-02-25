@@ -151,21 +151,21 @@ class NameIndex():
         try:
             names = self.efo_index.get_names(iri)
             if names:
-                return names
+                return names, 'efo'
         except:
             pass
 
         try:
             names = self.mesh_index.get_names(iri)
             if names:
-                return names
+                return names, 'mesh'
         except:
             pass
 
         try:
             names = self.umls_index.get_names(iri)
             if names:
-                return names
+                return names, 'umls'
         except:
             pass
         
