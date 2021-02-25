@@ -31,7 +31,7 @@ class XrefIndex():
         except:
             pass
     
-    def name_xref(self, iri):
+    def name_xref(self, iri, min_length=4):
         def get_names(iri):
             r = self.name_index.get_names(iri)
             if r:
@@ -44,7 +44,10 @@ class XrefIndex():
                     iri_names = {n for n,p,s in names if s <= 5}  # all
             else:
                 iri_names = set()
-                
+            
+            if min_length:
+                iri_names = {n for n in iri_names if len(n)>=min_length}
+            
             return iri_names
         
         iri_names = get_names(iri)
