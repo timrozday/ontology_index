@@ -32,11 +32,21 @@ class XrefIndex():
             pass
     
     def name_xref(self, iri):
-        r = self.name_index.get_names(iri)
-        if r:
-            iri_names = {n for n,_,_ in r}
-        else:
-            iri_names = set()
+        def get_names(iri):
+            r, names_source = self.name_index.get_names(iri)
+            if r:
+                if names_source == 'efo':
+                    iri_names = {n for n,p,s in r if s >= 4}
+                if names_source == 'mesh':
+                    iri_names = {n for n,p,s in r if s >= 3}  # all
+                if names_source == 'umls':
+                    iri_names = {n for n,p,s in r if s >= 5}  # all
+            else:
+                iri_names = set()
+                
+            return iri_names
+        
+        iri_names = get_names(iri)
             
         candidates = set()
         for n in iri_names:
@@ -45,16 +55,7 @@ class XrefIndex():
         filtered_iri_names = {self.name_index.filter_name(n) for n in iri_names}
         
         for c in candidates:
-            r, names_source = self.name_index.get_names(c)
-            if r:
-                if names_source == 'efo':
-                    c_names = {n for n,p,s in r if s >= 4}
-                if names_source == 'mesh':
-                    c_names = {n for n,p,s in r if s >= 3}  # all
-                if names_source == 'umls':
-                    c_names = {n for n,p,s in r if s >= 5}  # all
-            else:
-                c_names = set()
+            c_names = get_names(c)
                 
             filtered_c_names = {self.name_index.filter_name(n) for n in c_names}
             overlap = filtered_c_names & filtered_iri_names
