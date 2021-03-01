@@ -10,11 +10,11 @@ class EfoIndex():
     equivalent_rels = {
         "http://www.w3.org/2002/07/owl#equivalentClass",
         "http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#exactMatch",
-        "http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#closeMatch",
     }
     close_rels = {
         "http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#narrowMatch",
         "http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#broadMatch",
+        "http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#closeMatch",
     }
     xref_rels = {
         "http://www.geneontology.org/formats/oboInOwl#hasDbXref",
@@ -22,8 +22,6 @@ class EfoIndex():
     child_rels = set()
     parent_rels = {
         'http://www.w3.org/2000/01/rdf-schema#subClassOf',
-        'http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#excluded_subClassOf',
-        'http://www.geneontology.org/formats/oboInOwl#inSubset'
     }
     name_labels = {
         'http://www.w3.org/2000/01/rdf-schema#label',
@@ -182,7 +180,7 @@ class EfoIndex():
         self.rev_rels_index = defaultdict(set)
         for p in self.equivalent_rels|self.close_rels|self.child_rels|self.parent_rels:
             p_iri = rdflib.URIRef(p)
-            for s,o in tqdm(self.efo_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}"), initBindings={'p': p_iri}, leave=True, position=0, desc=str(p)):
+            for s,o in tqdm(self.efo_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}", initBindings={'p': p_iri}), leave=True, position=0, desc=str(p)):
                 if isinstance(s, rdflib.term.URIRef) and isinstance(o, rdflib.term.URIRef):
                     self.rels_index[str(s)].add((self.rel_dict[str(p)],str(o)))
                     self.rev_rels_index[str(o)].add((self.rev_rel_dict[str(p)],str(s)))
