@@ -9,12 +9,12 @@ import zipfile
 class EfoIndex():
     equivalent_rels = {
         "http://www.w3.org/2002/07/owl#equivalentClass",
-        "http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#exactMatch",
+        "http://purl.obolibrary.org/obo/mondo#exactMatch",
     }
     close_rels = {
-        "http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#narrowMatch",
-        "http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#broadMatch",
-        "http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#closeMatch",
+        "http://purl.obolibrary.org/obo/mondo#narrowMatch",
+        "http://purl.obolibrary.org/obo/mondo#broadMatch",
+        "http://purl.obolibrary.org/obo/mondo#closeMatch",
     }
     xref_rels = {
         "http://www.geneontology.org/formats/oboInOwl#hasDbXref",
@@ -25,7 +25,7 @@ class EfoIndex():
     }
     name_labels = {
         'http://www.w3.org/2000/01/rdf-schema#label',
-        'http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#prefLabel',
+        'http://www.w3.org/2004/02/skos/core#prefLabel',
         'http://purl.obolibrary.org/obo/ArrayExpress_label',
         'http://www.geneontology.org/formats/oboInOwl#hasExactSynonym',
         'http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym',
@@ -39,7 +39,7 @@ class EfoIndex():
     
     name_ranks = {
         'http://www.w3.org/2000/01/rdf-schema#label': 1,
-        'http://purl.obolibrary.org/obo/http://www.ebi.ac.uk/efo/efo.owl#prefLabel': 2,
+        'http://www.w3.org/2004/02/skos/core#prefLabel': 2,
         'http://www.geneontology.org/formats/oboInOwl#hasExactSynonym': 3,
         'http://www.geneontology.org/formats/oboInOwl#shorthand': 4,
         'http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym': 5,
