@@ -54,7 +54,9 @@ class XrefIndex():
             
         candidates = set()
         for n in iri_names:
-            candidates.update(self.name_index.query(n))
+            r = self.name_index.query(n)
+            if r:
+                candidates.update(r)
         
         filtered_iri_names = {self.name_index.filter_name(n) for n in iri_names}
         
