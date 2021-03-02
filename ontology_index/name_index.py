@@ -9,7 +9,73 @@ import requests
 import urllib
 import re
 
-class NameIndex():
+class TextFilter():
+    def __init__(self):
+        pass
+    
+    def normalise_whitespace(self, s):
+        s = re.sub('\s+', ' ', s)
+        s = re.sub('\s+$', '', s)
+        s = re.sub('^\s+', '', s)
+        return s
+
+    exclude_suffixes = {
+        ', nos',
+        ',nos',
+        ', not otherwise specified',
+        ', unspecified',
+        ', not elsewhere classified'
+    }
+    
+    def filter_name(self, s):
+
+        s = s.lower()
+        if re.match('.*(\s|^)\(.*\)(\s|$).*', s):
+            s = re.sub('(\s|^)\(.*\)(\s|$)', ' ', s)
+
+            # tidy up problems that occur due to removing brackets
+            s = self.normalise_whitespace(s)
+
+            if bool(s):
+                if s[-1] == ',':
+                    s = self.normalise_whitespace(s[:-1])
+                if s[0] == ',':
+                    s = self.normalise_whitespace(s[1:])
+
+        else:
+            s = self.normalise_whitespace(s)
+
+        if re.match('.*(\s|^)\[.*\](\s|$).*', s):
+            s = re.sub('(\s|^)\[.*\](\s|$)', ' ', s)
+
+            # tidy up problems that occur due to removing brackets
+            s = self.normalise_whitespace(s)
+
+            if bool(s):
+                if s[-1] == ',':
+                    s = self.normalise_whitespace(s[:-1])
+                if s[0] == ',':
+                    s = self.normalise_whitespace(s[1:])
+
+        else:
+            s = self.normalise_whitespace(s)
+
+        s = re.sub('(\s|^)&(\s|$)', 'and', s)
+        s = re.sub('[/\-]', ' ', s)
+        s = re.sub('[^a-z., ]', '', s)
+        s = re.sub('(\s|^)\.\s', ' ', s)
+
+        for suffix in self.exclude_suffixes:
+            if s[-len(suffix):] == suffix:
+                s = self.normalise_whitespace(s[:-len(suffix)])
+
+        return s
+
+    def tokenize(self, s):
+        return [self.normalise_whitespace(t) for t in re.split('(?<=\S)[\s](?=\S)', s)]
+    
+
+class NameIndex(TextFilter):
 
     def __init__(self, data_dir='.', efo_index=None, mesh_index=None, umls_index=None):
         self.data_dir = data_dir
@@ -33,63 +99,6 @@ class NameIndex():
             self.load_indexes()
         except:
             pass
-    
-    exclude_suffixes = {
-        ', nos',
-        ',nos',
-        ', not otherwise specified',
-        ', unspecified',
-        ', not elsewhere classified'
-    }
-    
-    def filter_name(self,s):
-        def normalise_whitespace(s):
-            s = re.sub('\s+', ' ', s)
-            s = re.sub('\s+$', '', s)
-            s = re.sub('^\s+', '', s)
-            return s
-
-        s = s.lower()
-        if re.match('.*(\s|^)\(.*\)(\s|$).*', s):
-            s = re.sub('(\s|^)\(.*\)(\s|$)', ' ', s)
-
-            # tidy up problems that occur due to removing brackets
-            s = normalise_whitespace(s)
-
-            if bool(s):
-                if s[-1] == ',':
-                    s = normalise_whitespace(s[:-1])
-                if s[0] == ',':
-                    s = normalise_whitespace(s[1:])
-
-        else:
-            s = normalise_whitespace(s)
-
-        if re.match('.*(\s|^)\[.*\](\s|$).*', s):
-            s = re.sub('(\s|^)\[.*\](\s|$)', ' ', s)
-
-            # tidy up problems that occur due to removing brackets
-            s = normalise_whitespace(s)
-
-            if bool(s):
-                if s[-1] == ',':
-                    s = normalise_whitespace(s[:-1])
-                if s[0] == ',':
-                    s = normalise_whitespace(s[1:])
-
-        else:
-            s = normalise_whitespace(s)
-
-        s = re.sub('(\s|^)&(\s|$)', 'and', s)
-        s = re.sub('[/\-]', ' ', s)
-        s = re.sub('[^a-z., ]', '', s)
-        s = re.sub('(\s|^)\.\s', ' ', s)
-        
-        for suffix in self.exclude_suffixes:
-            if s[-len(suffix):] == suffix:
-                s = normalise_whitespace(s[:-len(suffix)])
-
-        return s
     
     def gen_query_index(self):
         self.name_index = defaultdict(set)
@@ -173,8 +182,10 @@ class NameIndex():
                 return names, 'umls'
         except:
             pass
+
         
-class QualifierIndex():
+        
+class QualifierIndex(TextFilter):
     """For extraction of allowed qualifiers from indications
 
 From `NCIT` and `HPO`.
@@ -238,80 +249,21 @@ Miscellaneous
             else:
                 p+=1
         return data
-
-    def normalise_whitespace(self, s):
-        s = re.sub('\s+', ' ', s)
-        s = re.sub('\s+$', '', s)
-        s = re.sub('^\s+', '', s)
-        return s
-
-    def filter_name(self, s):
-
-        exclude_suffixes = {
-            ', nos',
-            ',nos',
-            ', not otherwise specified',
-            ', unspecified',
-            ', not elsewhere classified'
-        }
-
-        s = s.lower()
-        if re.match('.*(\s|^)\(.*\)(\s|$).*', s):
-            s = re.sub('(\s|^)\(.*\)(\s|$)', ' ', s)
-
-            # tidy up problems that occur due to removing brackets
-            s = self.normalise_whitespace(s)
-
-            if bool(s):
-                if s[-1] == ',':
-                    s = self.normalise_whitespace(s[:-1])
-                if s[0] == ',':
-                    s = self.normalise_whitespace(s[1:])
-
-        else:
-            s = self.normalise_whitespace(s)
-
-        if re.match('.*(\s|^)\[.*\](\s|$).*', s):
-            s = re.sub('(\s|^)\[.*\](\s|$)', ' ', s)
-
-            # tidy up problems that occur due to removing brackets
-            s = self.normalise_whitespace(s)
-
-            if bool(s):
-                if s[-1] == ',':
-                    s = self.normalise_whitespace(s[:-1])
-                if s[0] == ',':
-                    s = self.normalise_whitespace(s[1:])
-
-        else:
-            s = self.normalise_whitespace(s)
-
-        s = re.sub('(\s|^)&(\s|$)', 'and', s)
-        s = re.sub('[/\-]', ' ', s)
-        s = re.sub('[^a-z., ]', '', s)
-        s = re.sub('(\s|^)\.\s', ' ', s)
-
-        for suffix in exclude_suffixes:
-            if s[-len(suffix):] == suffix:
-                s = self.normalise_whitespace(s[:-len(suffix)])
-
-        return s
-
-    def tokenize(self, s):
-        return [self.normalise_whitespace(t) for t in re.split('(?<=\S)[\s](?=\S)', s)]
     
     def gen_indexes(self, ncit=True, hpo=True, miscellaneous=True):
 
         hp_qualifiers = {}
         if hpo:
-            for iri in {'http://purl.obolibrary.org/obo/HP_0031797',
-                        'http://purl.obolibrary.org/obo/HP_0011008', 
-                        'http://purl.obolibrary.org/obo/HP_0003679', 
-                        'http://purl.obolibrary.org/obo/HP_0003674', 
-                        'http://purl.obolibrary.org/obo/HP_0012823',
-                        'http://purl.obolibrary.org/obo/HP_0025280', 
-                        'http://purl.obolibrary.org/obo/HP_0012824', 
-                        'http://purl.obolibrary.org/obo/HP_0040279'}:
+            for iri in tqdm({
+                'http://purl.obolibrary.org/obo/HP_0031797',
+                'http://purl.obolibrary.org/obo/HP_0011008', 
+                'http://purl.obolibrary.org/obo/HP_0003679', 
+                'http://purl.obolibrary.org/obo/HP_0003674', 
+                'http://purl.obolibrary.org/obo/HP_0012823',
+                'http://purl.obolibrary.org/obo/HP_0025280', 
+                'http://purl.obolibrary.org/obo/HP_0012824', 
+                'http://purl.obolibrary.org/obo/HP_0040279',
+            }, leave=True, position=0, desc="HPO qualifiers"):
                 for r in self.get_iri_decendents((iri, 'hp')):
                     hp_qualifiers[(r['iri'], r['ontology_name'])] = {r['label']}
                     if 'synonyms' in r:
@@ -320,7 +272,7 @@ Miscellaneous
 
         ncit_qualifiers = {}
         if ncit:
-            for iri in {
+            for iri in tqdm({
             #     'http://purl.obolibrary.org/obo/NCIT_C41009', # Qualifier
                 'http://purl.obolibrary.org/obo/NCIT_C13442', # Anatomical qualifier
                 'http://purl.obolibrary.org/obo/NCIT_C21514', # Temporal qualifier
@@ -328,7 +280,7 @@ Miscellaneous
                 'http://purl.obolibrary.org/obo/NCIT_C27992', # Disease qualifier
                 'http://purl.obolibrary.org/obo/NCIT_C28102', # Disease clinical qualifier
                 'http://purl.obolibrary.org/obo/NCIT_C27993', # General qualifier (contains 'primary')
-            }:
+            }, leave=True, position=0, desc="NCIT qualifiers"):
                 for r in self.get_iri_decendents((iri, 'ncit')):
                     ncit_qualifiers[(r['iri'], r['ontology_name'])] = {r['label']}
                     if 'synonyms' in r:
@@ -382,8 +334,8 @@ Miscellaneous
         q_tokens = set(self.tokenize(self.filter_name(q)))
         candidate_matches = set()
         for t in q_tokens:
-            if t in token_qualifier_index:
-                candidate_matches.update(token_qualifier_index[t])
+            if t in self.token_qualifier_index:
+                candidate_matches.update(self.token_qualifier_index[t])
 
     #     return candidate_matches
         candidate_matches_2 = set()
