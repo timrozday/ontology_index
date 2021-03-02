@@ -3,7 +3,7 @@ from .name_index import NameIndex, QualifierIndex
 
 class XrefIndex():
     
-    def __init__(self, data_dir='.', efo_index=None, mesh_index=None, umls_index=None, name_index=None):
+    def __init__(self, data_dir='.', efo_index=None, mesh_index=None, umls_index=None, name_index=None, qualifier_index=None):
         self.data_dir = data_dir
         
         if efo_index:
@@ -26,12 +26,17 @@ class XrefIndex():
         else:
             self.name_index = NameIndex(data_dir=self.data_dir, efo_index=efo_index, mesh_index=mesh_index, umls_index=umls_index)
         
+        if qualifier_index:
+            self.qualifier_index = qualifier_index
+        else:
+            self.qualifier_index = QualifierIndex(data_dir=self.data_dir)
+        
         try:
             self.load_indexes()
         except:
             pass
     
-    def name_xref(self, iri, min_length=5):
+    def name_xref(self, iri, min_length=5, extract_qualifiers=True):
         def get_names(iri):
             r = self.name_index.get_names(iri)
             if r:
@@ -52,28 +57,40 @@ class XrefIndex():
         
         iri_names = get_names(iri)
             
-        candidates = set()
+        candidates = defaultdict(set)
         for n in iri_names:
             r = self.name_index.query(n)
             if r:
-                candidates.update(r)
+                candidates[None].update(r)
+            if extract_qualifiers:
+                new_n, quals = qualifier_index.extract_qualifiers(n)
+                r = self.name_index.query(new_n)
+                if r:
+                    candidates[tuple(quals)].update(r)
         
         filtered_iri_names = {self.name_index.filter_name(n) for n in iri_names}
+        if extract_qualifiers:
+            filtered_iri_names = {qualifier_index.extract_qualifiers(n)[0] for n in filtered_iri_names}
         
-        for c in candidates:
-            c_names = get_names(c)
-            if c_names:
-                filtered_c_names = {self.name_index.filter_name(n) for n in c_names}
-                overlap = filtered_c_names & filtered_iri_names
-                scores = [len(overlap)/len(filtered_c_names), len(overlap)/len(filtered_iri_names)]
-                yield (
-                    c,
-                    max(scores),
-                    min(scores),
-                    iri_names,
-                    c_names,
-                    overlap
-                )
+        for quals, qual_candidates in candidates.items():
+            for c in candidates:
+                c_names = get_names(c)
+                if c_names:
+                    filtered_c_names = {self.name_index.filter_name(n) for n in c_names}
+                    if extract_qualifiers:
+                        filtered_c_names = {qualifier_index.extract_qualifiers(n)[0] for n in filtered_c_names}
+                        
+                    overlap = filtered_c_names & filtered_iri_names
+                    scores = [len(overlap)/len(filtered_c_names), len(overlap)/len(filtered_iri_names)]
+                    yield (
+                        c,
+                        max(scores),
+                        min(scores),
+                        iri_names,
+                        c_names,
+                        overlap,
+                        quals
+                    )
     
     def ontology_xref(self, iri, equivalents=True):
         xrefs = set()
@@ -104,7 +121,7 @@ class XrefIndex():
         return xrefs
         
     
-    def get_xrefs(self, iris, covered_iris=None, jumps=1, ontology_based=True, name_based=True, name_xref_score_threshold=0.2, equivalents=True, min_name_length=5):
+    def get_xrefs(self, iris, covered_iris=None, jumps=1, ontology_based=True, name_based=True, extract_qualifiers=True, name_xref_score_threshold=0.2, equivalents=True, min_name_length=5):
         if isinstance(iris, str):
             iris = {iris}
         iris = set(iris)
@@ -118,7 +135,7 @@ class XrefIndex():
             if ontology_based:
                 xrefs.update(self.ontology_xref(iri, equivalents=equivalents))  # ontology xrefs
             if name_based:
-                for m, max_score, min_score, _, _, _ in self.name_xref(iri, min_length=min_name_length):
+                for m, max_score, min_score, _, _, _, quals in self.name_xref(iri, min_length=min_name_length):
                     if max_score >= name_xref_score_threshold:
                         xrefs.add(m)  # name-based xrefs
             
