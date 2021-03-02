@@ -65,14 +65,14 @@ class XrefIndex():
             if r:
                 candidates[None].update(r)
             if extract_qualifiers:
-                new_n, quals = qualifier_index.extract_qualifiers(n)
+                new_n, quals = self.qualifier_index.extract_qualifiers(n)
                 r = self.name_index.query(new_n)
                 if r:
                     candidates[tuple(quals)].update(r)
         
         filtered_iri_names = {self.name_index.filter_name(n) for n in iri_names}
         if extract_qualifiers:
-            filtered_iri_names = {qualifier_index.extract_qualifiers(n)[0] for n in filtered_iri_names}
+            filtered_iri_names = {self.qualifier_index.extract_qualifiers(n)[0] for n in filtered_iri_names}
         
         for quals, qual_candidates in candidates.items():
             for c in candidates:
@@ -80,7 +80,7 @@ class XrefIndex():
                 if c_names:
                     filtered_c_names = {self.name_index.filter_name(n) for n in c_names}
                     if extract_qualifiers:
-                        filtered_c_names = {qualifier_index.extract_qualifiers(n)[0] for n in filtered_c_names}
+                        filtered_c_names = {self.qualifier_index.extract_qualifiers(n)[0] for n in filtered_c_names}
                         
                     overlap = filtered_c_names & filtered_iri_names
                     scores = [len(overlap)/len(filtered_c_names), len(overlap)/len(filtered_iri_names)]
