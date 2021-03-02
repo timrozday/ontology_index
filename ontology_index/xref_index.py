@@ -75,7 +75,7 @@ class XrefIndex():
             filtered_iri_names = {self.qualifier_index.extract_qualifiers(n)[0] for n in filtered_iri_names}
         
         for quals, qual_candidates in candidates.items():
-            for c in candidates:
+            for c in qual_candidates:
                 c_names = get_names(c)
                 if c_names:
                     filtered_c_names = {self.name_index.filter_name(n) for n in c_names}
