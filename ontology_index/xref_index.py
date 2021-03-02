@@ -1,6 +1,8 @@
 from .onto_index import EfoIndex, MeshIndex, UmlsIndex
 from .name_index import NameIndex, QualifierIndex
 
+from collections import defaultdict
+
 class XrefIndex():
     
     def __init__(self, data_dir='.', efo_index=None, mesh_index=None, umls_index=None, name_index=None, qualifier_index=None):
