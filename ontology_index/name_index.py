@@ -64,7 +64,8 @@ class TextFilter():
         s = re.sub('[/\-]', ' ', s)
         s = re.sub('[^a-z., ]', '', s)
         s = re.sub('(\s|^)\.\s', ' ', s)
-
+        s = self.normalise_whitespace(s)
+        
         for suffix in self.exclude_suffixes:
             if s[-len(suffix):] == suffix:
                 s = self.normalise_whitespace(s[:-len(suffix)])
