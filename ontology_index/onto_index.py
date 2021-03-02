@@ -85,6 +85,46 @@ class EfoIndex():
         
         self.cache = {}
 
+    def get_children(self, iri, equivalents=True):
+        rels = set()
+
+        if iri in self.rels_index:
+            rels.update(self.rels_index[iri])
+        if iri in self.rev_rels_index:
+            rels.update(self.rev_rels_index[iri])
+
+        allowed_p = {'child'}
+        if equivalents:
+            allowed_p.add('equivalent')
+
+        return {i for p,i in rels if p in allowed_p}
+
+    def get_descendents(self, iris, covered_iris=None, jumps=1, equivalents=True):
+        if isinstance(iris, str):
+            iris = {iris}
+        iris = set(iris)
+
+        if covered_iris is None:
+            covered_iris = iris
+
+        xrefs = set()
+
+        for iri in iris:
+            xrefs.update(self.get_children(iri, equivalents=equivalents))  # ontology xrefs
+
+        new_xrefs = xrefs - covered_iris
+
+        if new_xrefs and not (jumps==0 or jumps==1):
+            xrefs.update(
+                self.get_descendents(
+                    new_xrefs, 
+                    covered_iris=covered_iris|xrefs, 
+                    jumps=jumps-1
+                )
+            )
+
+        return xrefs
+        
     def get_distant_efo_relatives(self, iri, distance=2, distant_rels={'close', 'child', 'parent'}, equivalent_rels={'equivalent'}):
 
         def rec_f(iri, distance=2, related_iris={}):
@@ -381,6 +421,13 @@ class MeshIndex():
                     iri_links.add((iri1, iri2, d))
         return iri_links
 
+    def get_descendents(self, iri):
+        iri = iri.split('/')[-1]
+        xrefs = set()
+        for tn in self.iri2treenumber[iri]:
+            xrefs.update({f"http://id.nlm.nih.gov/mesh/2021/{i}" for d,i in self.treenumber_index[tn]})
+        return xrefs
+    
     def get_distant_mesh_relatives(self, iri, distance=2, search_up=True):
 
         def rec_f(tn, distance=2, related_iris=set()):
@@ -626,3 +673,4 @@ class UmlsIndex():
             self.iri2name = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/umls_iri2pref_name.json", 'rt') as f:
             self.iri2pref_name = json.load(f)
+            
