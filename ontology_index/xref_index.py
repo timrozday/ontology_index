@@ -135,7 +135,7 @@ class XrefIndex():
             if ontology_based:
                 xrefs.update(self.ontology_xref(iri, equivalents=equivalents))  # ontology xrefs
             if name_based:
-                for m, max_score, min_score, _, _, _, quals in self.name_xref(iri, min_length=min_name_length):
+                for m, max_score, min_score, _, _, _, quals in self.name_xref(iri, min_length=min_name_length, extract_qualifiers=extract_qualifiers):
                     if max_score >= name_xref_score_threshold:
                         xrefs.add(m)  # name-based xrefs
             
