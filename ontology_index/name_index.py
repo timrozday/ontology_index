@@ -1,8 +1,13 @@
 import re
 import json
+import pickle
 from collections import defaultdict
 from .onto_index import EfoIndex, MeshIndex, UmlsIndex
 from tqdm.auto import tqdm
+
+import requests
+import urllib
+import re
 
 class NameIndex():
 
