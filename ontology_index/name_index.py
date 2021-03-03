@@ -30,21 +30,21 @@ class TextFilter():
     def filter_name(self, s):
 
         s = s.lower()
-#         if re.match('.*(\s|^)\([^)]*\)(\s|$).*', s):
-#             s = re.sub('(\s|^)\([^)]*\)(\s|$)', ' ', s)
+        if re.match('.*(\s|^)\([^)]*\)(\s|$).*', s):
+            s = re.sub('(\s|^)\([^)]*\)(\s|$)', ' ', s)
 
-#             # tidy up problems that occur due to removing brackets
-#             s = self.normalise_whitespace(s)
+            # tidy up problems that occur due to removing brackets
+            s = self.normalise_whitespace(s)
 
-#             if bool(s):
-#                 if s[-1] == ',':
-#                     s = self.normalise_whitespace(s[:-1])
-#             if bool(s):
-#                 if s[0] == ',':
-#                     s = self.normalise_whitespace(s[1:])
+            if bool(s):
+                if s[-1] == ',':
+                    s = self.normalise_whitespace(s[:-1])
+            if bool(s):
+                if s[0] == ',':
+                    s = self.normalise_whitespace(s[1:])
 
-#         else:
-#             s = self.normalise_whitespace(s)
+        else:
+            s = self.normalise_whitespace(s)
 
 #         if re.match('.*(\s|^)\[[^\]]*\](\s|$).*', s):
 #             s = re.sub('(\s|^)\[[^\]]*\](\s|$)', ' ', s)
