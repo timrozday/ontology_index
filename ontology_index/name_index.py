@@ -39,6 +39,7 @@ class TextFilter():
             if bool(s):
                 if s[-1] == ',':
                     s = self.normalise_whitespace(s[:-1])
+            if bool(s):
                 if s[0] == ',':
                     s = self.normalise_whitespace(s[1:])
 
@@ -54,6 +55,7 @@ class TextFilter():
             if bool(s):
                 if s[-1] == ',':
                     s = self.normalise_whitespace(s[:-1])
+            if bool(s):
                 if s[0] == ',':
                     s = self.normalise_whitespace(s[1:])
 
@@ -73,6 +75,7 @@ class TextFilter():
         if bool(s):
             if s[-1] == ',':
                 s = self.normalise_whitespace(s[:-1])
+        if bool(s):
             if s[0] == ',':
                 s = self.normalise_whitespace(s[1:])
         
