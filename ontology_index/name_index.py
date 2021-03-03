@@ -70,10 +70,11 @@ class TextFilter():
             if s[-len(suffix):] == suffix:
                 s = self.normalise_whitespace(s[:-len(suffix)])
         
-        if s[-1] == ',':
-            s = self.normalise_whitespace(s[:-1])
-        if s[0] == ',':
-            s = self.normalise_whitespace(s[1:])
+        if bool(s):
+            if s[-1] == ',':
+                s = self.normalise_whitespace(s[:-1])
+            if s[0] == ',':
+                s = self.normalise_whitespace(s[1:])
         
         return s
 
@@ -112,18 +113,21 @@ class NameIndex(TextFilter):
         for iri, d in tqdm(self.efo_index.iri2name.items(), leave=True, position=0):
             for name_type, name in d:
                 filtered_name = self.filter_name(name)
-                self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
+                if filtered_name:
+                    self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
                 
         for iri, d in tqdm(self.mesh_index.iri2name.items(), leave=True, position=0):
             for name_type, name in d:
                 filtered_name = self.filter_name(name)
-                self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
+                if filtered_name:
+                    self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
 
         for iri, d in tqdm(self.umls_index.iri2name.items(), leave=True, position=0):
             for name_type, umls_name_type, name in d:
                 filtered_name = self.filter_name(name)
-                name_type = self.umls_index.name_types[umls_name_type]
-                self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
+                if filtered_name:
+                    name_type = self.umls_index.name_types[umls_name_type]
+                    self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
                 
     def save_indexes(self, data_dir=None):
         if data_dir is None:
