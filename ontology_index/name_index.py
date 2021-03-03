@@ -199,7 +199,7 @@ class NameIndex(TextFilter):
         with open(f'{data_dir}/name_index.json', 'rt') as f:
             self.name_index = {k:set(vs) for k,vs in json.load(f).items()}
         with open(f'{data_dir}/iri_name_index.json', 'rt') as f:
-            self.iri_name_index = {k:set(vs) for k,vs in json.load(f).items()}
+            self.iri_name_index = {k:{(n,f,tuple(t)) for n,f,t in vs} for k,vs in json.load(f).items()}
             
         self.gen_kmer_index()
             
