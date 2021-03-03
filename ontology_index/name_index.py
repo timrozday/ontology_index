@@ -20,11 +20,11 @@ class TextFilter():
         return s
 
     exclude_suffixes = {
-        ', nos',
-        ',nos',
-        ', not otherwise specified',
-        ', unspecified',
-        ', not elsewhere classified'
+        'nos',
+        'nec',
+        'not otherwise specified',
+        'unspecified',
+        'not elsewhere classified'
     }
     
     def filter_name(self, s):
@@ -69,7 +69,12 @@ class TextFilter():
         for suffix in self.exclude_suffixes:
             if s[-len(suffix):] == suffix:
                 s = self.normalise_whitespace(s[:-len(suffix)])
-
+        
+        if s[-1] == ',':
+            s = self.normalise_whitespace(s[:-1])
+        if s[0] == ',':
+            s = self.normalise_whitespace(s[1:])
+        
         return s
 
     def tokenize(self, s):
