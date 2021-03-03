@@ -112,25 +112,50 @@ class NameIndex(TextFilter):
     
     def gen_query_index(self):
         self.name_index = defaultdict(set)
+        self.iri_name_index = defaultdict(set)
         
         for iri, d in tqdm(self.efo_index.iri2name.items(), leave=True, position=0):
             for name_type, name in d:
                 filtered_name = self.filter_name(name)
                 if filtered_name:
-                    self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
+                    if name_type in {
+                        'http://www.w3.org/2000/01/rdf-schema#label',
+                        'http://www.w3.org/2004/02/skos/core#prefLabel',
+                        'http://www.geneontology.org/formats/oboInOwl#hasExactSynonym',
+                        'http://www.geneontology.org/formats/oboInOwl#shorthand'
+                    }:
+                        self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
+                        tokens = self.tokenize(filtered_name)
+                        self.iri_name_index[iri].add((name, filtered_name, tuple(tokens)))
                 
         for iri, d in tqdm(self.mesh_index.iri2name.items(), leave=True, position=0):
             for name_type, name in d:
                 filtered_name = self.filter_name(name)
                 if filtered_name:
-                    self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
+                    if name_type in {
+                        'http://id.nlm.nih.gov/mesh/vocab#prefLabel',
+                        'http://www.w3.org/2000/01/rdf-schema#label',
+                        'http://id.nlm.nih.gov/mesh/vocab#altLabel'
+                    }:
+                        self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
+                        tokens = self.tokenize(filtered_name)
+                        self.iri_name_index[iri].add((name, filtered_name, tuple(tokens)))
 
         for iri, d in tqdm(self.umls_index.iri2name.items(), leave=True, position=0):
             for name_type, umls_name_type, name in d:
                 filtered_name = self.filter_name(name)
                 if filtered_name:
                     name_type = self.umls_index.name_types[umls_name_type]
-                    self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
+                    if name_type in {
+                        'umls:pref_term',
+                        'umls:case_word_order_variant',
+                        'umls:case_variant',
+                        'umls:variant',
+                        'umls:word_order_variant'
+                    }:
+                        self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
+                        tokens = self.tokenize(filtered_name)
+                        self.iri_name_index[iri].add((name, filtered_name, tuple(tokens)))
                 
     def save_indexes(self, data_dir=None):
         if data_dir is None:
@@ -138,6 +163,8 @@ class NameIndex(TextFilter):
         
         with open(f'{data_dir}/name_index.json', 'wt') as f:
             json.dump({k:list(vs) for k,vs in self.name_index.items()}, f)
+        with open(f'{data_dir}/iri_name_index.json', 'wt') as f:
+            json.dump({k:list(vs) for k,vs in self.iri_name_index.items()}, f)
             
     def load_indexes(self, data_dir=None):
         if data_dir is None:
@@ -145,6 +172,8 @@ class NameIndex(TextFilter):
             
         with open(f'{data_dir}/name_index.json', 'rt') as f:
             self.name_index = {k:set(vs) for k,vs in json.load(f).items()}
+        with open(f'{data_dir}/iri_name_index.json', 'rt') as f:
+            self.iri_name_index = {k:set(vs) for k,vs in json.load(f).items()}
             
     def query(self, q, filter_query=True):
         if filter_query:
@@ -175,26 +204,29 @@ class NameIndex(TextFilter):
             pass
         
     def get_names(self, iri):
-        try:
-            names = self.efo_index.get_names(iri)
-            if names:
-                return names, 'efo'
-        except:
-            pass
+#         try:
+#             names = self.efo_index.get_names(iri)
+#             if names:
+#                 return names, 'efo'
+#         except:
+#             pass
 
-        try:
-            names = self.mesh_index.get_names(iri)
-            if names:
-                return names, 'mesh'
-        except:
-            pass
+#         try:
+#             names = self.mesh_index.get_names(iri)
+#             if names:
+#                 return names, 'mesh'
+#         except:
+#             pass
 
-        try:
-            names = self.umls_index.get_names(iri)
-            if names:
-                return names, 'umls'
-        except:
-            pass
+#         try:
+#             names = self.umls_index.get_names(iri)
+#             if names:
+#                 return names, 'umls'
+#         except:
+#             pass
+        
+        if iri in self.iri_name_index:
+            return self.iri_name_index[iri]
 
         
         
