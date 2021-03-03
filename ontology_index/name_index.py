@@ -81,7 +81,7 @@ class TextFilter():
         
         return s
 
-    def remove_punctuation(s):
+    def remove_punctuation(self, s):
         s = re.sub('[^a-z0-9 ]', '', s)  # remove punctuation
         s = self.normalise_whitespace(s)
 
