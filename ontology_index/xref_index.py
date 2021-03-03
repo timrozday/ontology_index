@@ -38,26 +38,20 @@ class XrefIndex():
         except:
             pass
     
-    def name_xref(self, iri, min_length=5, extract_qualifiers=True):
-        def get_names(iri):
-            r = self.name_index.get_names(iri)
+    def name_xref(self, iri, min_length=4, extract_qualifiers=True):
+        def get_names(iri, min_length=4):
+            r = self.get_names(iri)
             if r:
-                names, names_source = r
-                if names_source == 'efo':
-                    iri_names = {n for n,p,s in names if s <= 4}
-                if names_source == 'mesh':
-                    iri_names = {n for n,p,s in names if s <= 3}  # all
-                if names_source == 'umls':
-                    iri_names = {n for n,p,s in names if s <= 5}  # all
+                iri_names = {filtered_name for name, filtered_name, tokens in r}
             else:
                 iri_names = set()
-            
+
             if min_length:
                 iri_names = {n for n in iri_names if len(n)>=min_length}
-            
+
             return iri_names
         
-        iri_names = get_names(iri)
+        iri_names = get_names(iri, min_length=min_length)
             
         candidates = defaultdict(set)
         for n in iri_names:
@@ -76,7 +70,7 @@ class XrefIndex():
         
         for quals, qual_candidates in candidates.items():
             for c in qual_candidates:
-                c_names = get_names(c)
+                c_names = get_names(c, min_length=min_length)
                 if c_names:
                     filtered_c_names = {self.name_index.filter_name(n) for n in c_names}
                     if extract_qualifiers:
@@ -123,7 +117,7 @@ class XrefIndex():
         return xrefs
         
     
-    def get_xrefs(self, iris, covered_iris=None, jumps=1, ontology_based=True, name_based=True, extract_qualifiers=True, name_xref_score_threshold=0.2, equivalents=True, min_name_length=5):
+    def get_xrefs(self, iris, covered_iris=None, jumps=1, ontology_based=True, name_based=True, extract_qualifiers=True, name_xref_score_threshold=0.05, equivalents=True, min_name_length=4):
         if isinstance(iris, str):
             iris = {iris}
         iris = set(iris)
