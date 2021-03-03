@@ -162,7 +162,27 @@ class NameIndex(TextFilter):
                         self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
                         tokens = self.tokenize(self.remove_punctuation(filtered_name))  # remove all punctuation
                         self.iri_name_index[iri].add((name, filtered_name, tuple(tokens)))
-                
+                        
+        self.gen_kmer_index()
+    
+    def gen_kmer_index(self, size_limit=None):
+        def gen_kmers(l, k=3):
+            if len(l) < k:
+                yield tuple(sorted(l))
+            for i in range(len(l)-k+1):
+                yield tuple(sorted(l[i:i+k]))
+
+        token_index = defaultdict(lambda :defaultdict(set))
+        for iri,data in tqdm(self.iri_name_index.items(), position=0, leave=True, desc="Generating kmer index"):
+            for name, filtered_name, tokens in data:
+                for kmer in gen_kmers(tokens):
+                    token_index[len(kmer)][kmer].add(iri)
+        
+        if size_limit:
+            self.token_index = {k1:{k2:v2 for k2,v2 in v1.items() if len(v2)<=size_limit} for k1,v1 in token_index.items()}
+        else:
+            self.token_index = {k1:{k2:v2 for k2,v2 in v1.items()} for k1,v1 in token_index.items()}
+    
     def save_indexes(self, data_dir=None):
         if data_dir is None:
             data_dir = self.data_dir
@@ -180,6 +200,8 @@ class NameIndex(TextFilter):
             self.name_index = {k:set(vs) for k,vs in json.load(f).items()}
         with open(f'{data_dir}/iri_name_index.json', 'rt') as f:
             self.iri_name_index = {k:set(vs) for k,vs in json.load(f).items()}
+            
+        self.gen_kmer_index()
             
     def query(self, q, filter_query=True):
         if filter_query:
