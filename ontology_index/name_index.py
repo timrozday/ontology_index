@@ -62,9 +62,9 @@ class TextFilter():
         else:
             s = self.normalise_whitespace(s)
 
-        s = re.sub('(\s|^)&(\s|$)', 'and', s)
+        s = re.sub('(\s|^)&(\s|$)', 'and', s)  # normalise ands
         s = re.sub('[/\-]', ' ', s)
-        s = re.sub('[^a-z., ]', '', s)
+        s = re.sub('[^a-z0-9., ]', '', s)
         s = re.sub('(\s|^)\.\s', ' ', s)
         s = self.normalise_whitespace(s)
         
@@ -81,6 +81,12 @@ class TextFilter():
         
         return s
 
+    def remove_punctuation(s):
+        s = re.sub('[^a-z0-9 ]', '', s)  # remove punctuation
+        s = self.normalise_whitespace(s)
+
+        return s
+    
     def tokenize(self, s):
         return [self.normalise_whitespace(t) for t in re.split('(?<=\S)[\s](?=\S)', s)]
     
@@ -125,7 +131,7 @@ class NameIndex(TextFilter):
                         'http://www.geneontology.org/formats/oboInOwl#shorthand'
                     }:
                         self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
-                        tokens = self.tokenize(filtered_name)
+                        tokens = self.tokenize(self.remove_punctuation(filtered_name))  # remove all punctuation
                         self.iri_name_index[iri].add((name, filtered_name, tuple(tokens)))
                 
         for iri, d in tqdm(self.mesh_index.iri2name.items(), leave=True, position=0):
@@ -138,7 +144,7 @@ class NameIndex(TextFilter):
                         'http://id.nlm.nih.gov/mesh/vocab#altLabel'
                     }:
                         self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
-                        tokens = self.tokenize(filtered_name)
+                        tokens = self.tokenize(self.remove_punctuation(filtered_name))  # remove all punctuation
                         self.iri_name_index[iri].add((name, filtered_name, tuple(tokens)))
 
         for iri, d in tqdm(self.umls_index.iri2name.items(), leave=True, position=0):
@@ -154,7 +160,7 @@ class NameIndex(TextFilter):
                         'umls:word_order_variant'
                     }:
                         self.name_index[filtered_name].add(iri)  # (name, name_type, iri)
-                        tokens = self.tokenize(filtered_name)
+                        tokens = self.tokenize(self.remove_punctuation(filtered_name))  # remove all punctuation
                         self.iri_name_index[iri].add((name, filtered_name, tuple(tokens)))
                 
     def save_indexes(self, data_dir=None):
