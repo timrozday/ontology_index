@@ -606,8 +606,10 @@ class UmlsIndex():
                 for line in tqdm((clean_line(l) for l in df), leave=True, position=0, desc='Extracting file'):
                     row_dict = {cols[i]:v for i,v in enumerate(line.split('|')) if i < len(cols)}
                     cui = f"UMLS:{row_dict['CUI']}"
-                    if str(row_dict['LAT']) == 'ENG':  # only english
-
+                    if all([
+                        str(row_dict['LAT']) == 'ENG',  # only english
+                        str(row_dict['SUPPRESS']) == 'N',
+                    ]):
 #                             sources.add(row_dict['SAB'])  # keep track of what sources are present
                         cui_terms[cui].append({'string': row_dict['STR'], \
                                                'source': row_dict['SAB'], \
