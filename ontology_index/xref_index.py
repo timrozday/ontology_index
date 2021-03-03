@@ -40,7 +40,7 @@ class XrefIndex():
     
     def name_xref(self, iri, min_length=4, extract_qualifiers=True):
         def get_names(iri, min_length=4):
-            r = self.get_names(iri)
+            r = self.name_index.get_names(iri)
             if r:
                 iri_names = {filtered_name for name, filtered_name, tokens in r}
             else:
