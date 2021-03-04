@@ -24,27 +24,37 @@ class TextFilter():
         'nec',
         'not otherwise specified',
         'unspecified',
-        'not elsewhere classified'
+        'not elsewhere classified',
+        '(nos)',
+        '(nec)',
+        '(not otherwise specified)',
+        '(unspecified)',
+        '(not elsewhere classified)',
+        '(disorder)',
+        '(disease)',
+        '(finding)',
+        '(morphologic abnormality)'
     }
     
     def filter_name(self, s):
 
-        s = s.lower()
-        if re.match('.*(\s|^)\([^)]*\)(\s|$).*', s):
-            s = re.sub('(\s|^)\([^)]*\)(\s|$)', ' ', s)
+        s = self.normalise_whitespace(s.lower())
+        
+#         if re.match('.*(\s|^)\([^)]*\)(\s|$).*', s):
+#             s = re.sub('(\s|^)\([^)]*\)(\s|$)', ' ', s)
 
-            # tidy up problems that occur due to removing brackets
-            s = self.normalise_whitespace(s)
+#             # tidy up problems that occur due to removing brackets
+#             s = self.normalise_whitespace(s)
 
-            if bool(s):
-                if s[-1] == ',':
-                    s = self.normalise_whitespace(s[:-1])
-            if bool(s):
-                if s[0] == ',':
-                    s = self.normalise_whitespace(s[1:])
+#             if bool(s):
+#                 if s[-1] == ',':
+#                     s = self.normalise_whitespace(s[:-1])
+#             if bool(s):
+#                 if s[0] == ',':
+#                     s = self.normalise_whitespace(s[1:])
 
-        else:
-            s = self.normalise_whitespace(s)
+#         else:
+#             s = self.normalise_whitespace(s)
 
 #         if re.match('.*(\s|^)\[[^\]]*\](\s|$).*', s):
 #             s = re.sub('(\s|^)\[[^\]]*\](\s|$)', ' ', s)
@@ -61,24 +71,18 @@ class TextFilter():
 
 #         else:
 #             s = self.normalise_whitespace(s)
-
+        
+        for suffix in self.exclude_suffixes:
+            if s[-len(suffix):] == suffix:
+                s = self.normalise_whitespace(s[:-len(suffix)])
+        
         s = re.sub('(\s|^)&(\s|$)', 'and', s)  # normalise ands
         s = re.sub('[/\-]', ' ', s)
         s = re.sub('[\']', '', s)
         s = re.sub('[^a-z0-9., ]', ' ', s)
         s = re.sub('(\s|^)\.(\s|$)', ' ', s)
         s = self.normalise_whitespace(s)
-        
-        for suffix in self.exclude_suffixes:
-            if s[-len(suffix):] == suffix:
-                s = self.normalise_whitespace(s[:-len(suffix)])
-        
-        if bool(s):
-            if s[-1] == ',':
-                s = self.normalise_whitespace(s[:-1])
-        if bool(s):
-            if s[0] == ',':
-                s = self.normalise_whitespace(s[1:])
+        s = self.trim(s)
         
         return s
 
@@ -93,11 +97,11 @@ class TextFilter():
         while change:
             change = False
             if bool(s):
-                if s[-1] in {',','.'}:
+                if s[-1] in {',','.',' '}:
                     s = s[:-1]
                     change = True
             if bool(s):
-                if s[0] == {',','.'}:
+                if s[0] == {',','.',' '}:
                     s = s[1:]
                     change = True
                     
