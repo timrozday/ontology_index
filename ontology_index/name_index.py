@@ -88,8 +88,23 @@ class TextFilter():
 
         return s
     
+    def trim(self, s):
+        change = True
+        while change:
+            change = False
+            if bool(s):
+                if s[-1] in {',','.'}:
+                    s = s[:-1]
+                    change = True
+            if bool(s):
+                if s[0] == {',','.'}:
+                    s = s[1:]
+                    change = True
+                    
+        return s
+    
     def tokenize(self, s):
-        return [self.normalise_whitespace(t) for t in re.split('(?<=\S)[\s](?=\S)', s)]
+        return [self.trim(t) for t in re.split('(?<=\S)[\s](?=\S)', self.normalise_whitespace(s))]
     
 
 class NameIndex(TextFilter):
