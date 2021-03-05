@@ -421,7 +421,7 @@ class MeshIndex():
         self.cache = {}
     
     def is_disease(self, iri):
-        for tn in self.iri2treenumber[iri.split('/')[-1]]:
+        for tn in self.get_treenumber(iri):
             if tn.split('/')[0] in self.relevant_root_treenumbers:
                 return True
         return False
@@ -512,6 +512,17 @@ class MeshIndex():
 
         return related_iris - {iri}
 
+    def get_iri(self, iri):
+        if iri in self.concept2iri:
+            return self.concept2iri[iri]
+        if iri in self.term2iri:
+            return self.term2iri[iri]
+        return iri
+    
+    def get_treenumber(self, iri):
+        iri = self.get_iri(iri)
+        return self.iri2treenumber[iri.split('/')[-1]]
+    
     def get_name(self, iri):
 #         try:
 #             query = self.mesh_graph.query(f"SELECT ?o WHERE {{ ?q <http://www.w3.org/2000/01/rdf-schema#label> ?o }}", initBindings={'q': rdflib.URIRef(iri)})
@@ -525,8 +536,17 @@ class MeshIndex():
         if iri in self.iri2name and self.iri2name[iri]:
             return sorted([(p,n) for p,n in self.iri2name[iri]], key=lambda x:(self.name_ranks[x[0]], len(x[1])) )[0][1]
 
-    def get_names(self, iri):
-        return {(n,p,self.name_ranks[p]) for p,n in self.iri2name[iri]}
+    def get_names(self, iri, all_terms=True):
+        iri = self.get_iri(iri)
+        
+        names = {(n,p,self.name_ranks[p]) for p,n in self.iri2name[iri]}
+        
+        if all_terms:
+            if iri in self.iri2term:
+                for p,o in self.iri2term[iri]:
+                    names.update((n,p,self.name_ranks[p]) for p,n in self.iri2name[o])
+        
+        return names
         
     def gen_treenumber_indexes(self):
         self.treenumber_index = defaultdict(set)
@@ -556,27 +576,33 @@ class MeshIndex():
         self.iri2name = dict(self.iri2name)
         
     def gen_term_indexes(self):
+        def convert_concept(iri):
+            if iri in self.concept2iri:
+                return self.concept2iri[iri]
+            else:
+                return iri
+        
         self.iri2term = defaultdict(set)
-        self.term2iri = defaultdict(set)
+        self.term2iri = {}
         for p in self.term_rels:
             p_iri = rdflib.URIRef(p)
             for s,o in tqdm(self.mesh_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}", initBindings={'p': p_iri}), leave=True, position=0, desc=str(p)):
                 if isinstance(s, rdflib.term.URIRef) and isinstance(o, rdflib.term.URIRef):
                     self.iri2term[str(s)].add((str(p), str(o)))
-                    self.term2iri[str(o)].add((str(p), str(s)))
+                    self.term2iri[str(o)] = convert_concept(str(s))
         
         self.iri2term = dict(self.iri2term)
         self.term2iri = dict(self.term2iri)
     
     def gen_concept_indexes(self):
         self.iri2concept = defaultdict(set)
-        self.concept2iri = defaultdict(set)
+        self.concept2iri = {}
         for p in self.concept_rels:
             p_iri = rdflib.URIRef(p)
             for s,o in tqdm(self.mesh_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}", initBindings={'p': p_iri}), leave=True, position=0, desc=str(p)):
                 if isinstance(s, rdflib.term.URIRef) and isinstance(o, rdflib.term.URIRef):
                     self.iri2concept[str(s)].add((str(p), str(o)))
-                    self.concept2iri[str(o)].add((str(p), str(s)))
+                    self.concept2iri[str(o)] = (str(p), str(s))
         
         self.iri2concept = dict(self.iri2concept)
         self.concept2iri = dict(self.concept2iri)
@@ -601,7 +627,7 @@ class MeshIndex():
         with open(f"{data_dir}/mesh_iri2concept.json", 'wt') as f:
             json.dump({k:[list(v) for v in vs] for k,vs in self.iri2concept.items()}, f)
         with open(f"{data_dir}/mesh_concept2iri.json", 'wt') as f:
-            json.dump({k:[list(v) for v in vs] for k,vs in self.concept2iri.items()}, f)
+            json.dump(self.concept2iri, f)
         
     def load_indexes(self, data_dir=None):
         if data_dir is None:
@@ -623,7 +649,7 @@ class MeshIndex():
         with open(f"{data_dir}/mesh_iri2concept.json", 'rt') as f:
             self.iri2concept = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/mesh_concept2iri.json", 'rt') as f:
-            self.concept2iri = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
+            self.concept2iri = json.load(f)
         
 class UmlsIndex():
     name = "umls"
