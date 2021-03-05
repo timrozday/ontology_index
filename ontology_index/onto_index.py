@@ -315,7 +315,9 @@ class EfoIndex():
     def save_indexes(self, data_dir=None):
         if data_dir is None:
             data_dir = self.data_dir
-            
+        
+        with open(f"{data_dir}/efo_disease_iris.json", 'wt') as f:
+            json.dump(list(self.disease_iris), f)
         with open(f"{data_dir}/efo_rels_index.json", 'wt') as f:
             json.dump({k:[list(v) for v in vs] for k,vs in self.rels_index.items()}, f)
         with open(f"{data_dir}/efo_rev_rels_index.json", 'wt') as f:
@@ -332,7 +334,9 @@ class EfoIndex():
     def load_indexes(self, data_dir=None):
         if data_dir is None:
             data_dir = self.data_dir
-            
+        
+        with open(f"{data_dir}/efo_disease_iris.json", 'rt') as f:
+            self.disease_iris = set(json.load(f))
         with open(f"{data_dir}/efo_rels_index.json", 'rt') as f:
             self.rels_index = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/efo_rev_rels_index.json", 'rt') as f:
