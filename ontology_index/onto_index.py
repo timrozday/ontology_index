@@ -421,8 +421,10 @@ class MeshIndex():
         self.cache = {}
     
     def is_disease(self, iri):
-        tn = self.iri2treenumber[iri]
-        return tn.split('/')[0] in self.relevant_root_treenumbers
+        for tn in self.iri2treenumber[iri.split('/')[-1]]:
+            if tn.split('/')[0] in self.relevant_root_treenumbers:
+                return True
+        return False
     
     def get_mesh_treenumbers(self, mesh_descriptor_id):
         if not mesh_descriptor_id in self.cache:
@@ -645,7 +647,7 @@ class UmlsIndex():
     
     def is_disease(self, iri):
         semantic_types = self.iri2semantic_types[iri]
-        return bool(semantic_types & good_semantic_types)
+        return bool(semantic_types & self.good_semantic_types)
     
     def gen_terms_and_rel_indexes(self, filepath=None):
         if filepath is None:
