@@ -50,6 +50,37 @@ class EfoIndex():
         'http://purl.obolibrary.org/obo/IAO_0100001': 10,
     }
     
+    disease_root_iris = {
+        "http://www.ebi.ac.uk/efo/EFO_0000408",   # EFO disease
+        "http://purl.obolibrary.org/obo/EFO_0000408",  # EFO disease
+        "http://www.ebi.ac.uk/efo/EFO_0000651",  # EFO phenotype
+        "http://purl.obolibrary.org/obo/EFO_0000651",  # EFO phenotype
+        "http://purl.obolibrary.org/obo/MONDO_0000001",  # MONDO disease
+        "http://purl.obolibrary.org/obo/OMIT_0005457",  # OMIT disease
+        "http://purl.obolibrary.org/obo/OMIT_0002893",  # OMIT Mental disorders
+        "http://purl.obolibrary.org/obo/DOID_4",  # DOID disease
+        "http://purl.obolibrary.org/obo/NCIT_C7057",  # NCIT disease, disorder or finding
+        "http://www.orpha.net/ORDO/Orphanet_377788",  # Orphanet disease
+        "http://www.orpha.net/ORDO/Orphanet_C001",  # Orphanet clinical entity
+        "http://purl.obolibrary.org/obo/OMIT_0001003",  # OMIT diseases category
+        "http://purl.obolibrary.org/obo/MONDO_0042489",  # EFO/MONDO disease susceptibility
+        "http://purl.obolibrary.org/obo/OMIT_0005461",  # OMIT disease susceptibility
+#         "http://purl.obolibrary.org/obo/GO_0008150",  # EFO Biological process
+        "http://purl.obolibrary.org/obo/OBI_1110122",  # EFO Pathologic process
+        "http://purl.obolibrary.org/obo/NCIT_C16956",  # NCIT Pathologic process
+        "http://purl.obolibrary.org/obo/HP_0000118",  # HP Phenotypic abnormality
+        "http://purl.obolibrary.org/obo/SYMP_0000462",  # SYMP Symptom
+#         "http://purl.obolibrary.org/obo/OMIT_0011629",  # OMIT phenotype
+#         "http://purl.obolibrary.org/obo/NCIT_C16977",  # NCIT phenotype
+#         "http://purl.obolibrary.org/obo/UPHENO_0001001",  # DOID phenotype
+    }
+    
+    relevant_root_nodes = {
+        "http://purl.obolibrary.org/obo/EFO_0000408",
+        "http://purl.obolibrary.org/obo/EFO_0000651",
+        "http://purl.obolibrary.org/obo/MONDO_0042489",
+    }
+    
     def __init__(self, data_dir='.'):
         self.data_dir = data_dir
         
@@ -265,6 +296,9 @@ class EfoIndex():
         self.xref_index = dict(self.xref_index)
         self.rev_xref_index = dict(self.rev_xref_index)
     
+    def gen_disease_indexes(self):
+        self.disease_iris = self.get_descendents(self.disease_root_iris, covered_iris=None, jumps=-1, equivalents=True)
+    
     def gen_name_indexes(self):
         self.iri2name = defaultdict(set)
         self.iri2pref_name = {}
@@ -347,7 +381,15 @@ class MeshIndex():
         'http://www.w3.org/2000/01/rdf-schema#label': 2,
         'http://id.nlm.nih.gov/mesh/vocab#altLabel': 3,
     }
-        
+    
+    relevant_root_treenumbers = {
+        "C01", "C02", "C03", "C04", "C05", 
+        "C06", "C07", "C08", "C09", "C10", 
+        "C11", "C12", "C13", "C14", "C15", 
+        "C16", "C17", "C18", "C19", "C20", 
+        "C21", "C22", "C23", "C24", "C25", 
+        "C26", "F03", 
+    }
     
     def __init__(self, data_dir='.'):
         self.data_dir = data_dir
@@ -369,6 +411,10 @@ class MeshIndex():
             pass
         
         self.cache = {}
+    
+    def is_disease(self, iri):
+        tn = self.iri2treenumber[iri]
+        return tn.split('/')[0] in self.relevant_root_treenumbers
     
     def get_mesh_treenumbers(self, mesh_descriptor_id):
         if not mesh_descriptor_id in self.cache:
@@ -563,6 +609,23 @@ class UmlsIndex():
         'VW': 'umls:word_order_variant',
     }
     
+    good_semantic_types = {
+        'T019',  # Congenital Abnormality
+        'T020',  # Acquired Abnormality
+        'T190',  # Anatomical Abnormality
+        'T033',  # Finding 
+        'T037',  # Injury or Poisoning
+        'T041',  # Mental Process
+        'T046',  # Pathologic Function
+        'T047',  # Disease or Syndrome
+        'T048',  # Mental or Behavioral Dysfunction
+        'T049',  # Cell or Molecular Dysfunction
+        'T050',  # Experimental Model of Disease
+        'T184',  # Sign or Symptom
+        'T191',  # Neoplastic Process
+        'T201',  # Clinical Attribute
+    }
+    
     def __init__(self, filepath=None, data_dir='.'):
         self.data_dir = data_dir
         self.filepath = filepath
@@ -571,7 +634,11 @@ class UmlsIndex():
             self.load_indexes()
         except:
             pass
-            
+    
+    def is_disease(self, iri):
+        semantic_types = self.iri2semantic_types[iri]
+        return bool(semantic_types & good_semantic_types)
+    
     def gen_terms_and_rel_indexes(self, filepath=None):
         if filepath is None:
             filepath = self.filepath
@@ -595,14 +662,14 @@ class UmlsIndex():
         equivalent_entities = defaultdict(set)
         cui_terms = defaultdict(list)
         
-        cols = ['CUI','LAT','TS','LUI','STT','SUI','ISPREF','AUI','SAUI','SCUI','SDUI','SAB','TTY','CODE','STR','SRL','SUPPRESS','CVF']
-        
 #         with tarfile.open(self.filepath, 'r:') as tf:
 #             for member in tf.getmembers():
 #                 if re.match('^.*?META/MRCONSO\.RRF$', member.name):
 #                     for line in (clean_line(l) for l in tf.extractfile(member)):
+
         with zipfile.ZipFile(filepath) as f:
             with f.open(name='MRCONSO.RRF') as df:
+                cols = ['CUI','LAT','TS','LUI','STT','SUI','ISPREF','AUI','SAUI','SCUI','SDUI','SAB','TTY','CODE','STR','SRL','SUPPRESS','CVF']
                 for line in tqdm((clean_line(l) for l in df), leave=True, position=0, desc='Extracting file'):
                     row_dict = {cols[i]:v for i,v in enumerate(line.split('|')) if i < len(cols)}
                     cui = f"UMLS:{row_dict['CUI']}"
@@ -621,6 +688,17 @@ class UmlsIndex():
                         iri = gen_iri(row_dict['SAB'], row_dict['CODE'])
                         if iri:
                             equivalent_entities[cui].add(iri)
+            
+            with f.open(name='MRSTY.RRF') as df:
+                cols = ['CUI','STY','?1','?2','?3','?4',]
+                iri2semantic_types = defaultdict(set)
+                with open(f"{umls_dir}/MRSTY.RRF", 'rt') as f:
+                    for line in tqdm(f.readlines(), leave=True, position=0, desc='Extracting file'):
+                        row_dict = {cols[i]:v for i,v in enumerate(line.split('|')[:-1])}
+                        cui = f"UMLS:{row_dict['CUI']}"
+                        iri2semantic_types[cui].add(row_dict['STY'])
+        
+        self.iri2semantic_types = {k:set(vs) for k,vs in iri2semantic_types.items()}
 
         self.entity_rels = defaultdict(set)
         self.iri2name = defaultdict(set)
@@ -657,7 +735,9 @@ class UmlsIndex():
     def save_indexes(self, data_dir=None):
         if data_dir is None:
             data_dir = self.data_dir
-            
+        
+        with open(f"{data_dir}/umls_iri2semantic_types.json", 'wt') as f:
+            json.dump({k:list(vs) for k,vs in self.iri2semantic_types.items()}, f)
         with open(f"{data_dir}/umls_entity_rels.json", 'wt') as f:
             json.dump({k:[list(v) for v in vs] for k,vs in self.entity_rels.items()}, f)
         with open(f"{data_dir}/umls_iri2name.json", 'wt') as f:
@@ -669,6 +749,8 @@ class UmlsIndex():
         if data_dir is None:
             data_dir = self.data_dir
             
+        with open(f"{data_dir}/umls_iri2semantic_types.json", 'rt') as f:
+            self.iri2semantic_types = {k:set(vs) for k,vs in json.load(f).items()}
         with open(f"{data_dir}/umls_entity_rels.json", 'rt') as f:
             self.entity_rels = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/umls_iri2name.json", 'rt') as f:
