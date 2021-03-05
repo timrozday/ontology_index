@@ -668,6 +668,7 @@ class UmlsIndex():
         sources = set()
         equivalent_entities = defaultdict(set)
         cui_terms = defaultdict(list)
+        iri2semantic_types = defaultdict(set)
         
 #         with tarfile.open(self.filepath, 'r:') as tf:
 #             for member in tf.getmembers():
@@ -698,12 +699,10 @@ class UmlsIndex():
             
             with f.open(name='umls-2020AB-data/MRSTY.RRF') as df:
                 cols = ['CUI','STY','?1','?2','?3','?4',]
-                iri2semantic_types = defaultdict(set)
-                with open(f"{umls_dir}/MRSTY.RRF", 'rt') as f:
-                    for line in tqdm(f.readlines(), leave=True, position=0, desc='Extracting file'):
-                        row_dict = {cols[i]:v for i,v in enumerate(line.split('|')[:-1])}
-                        cui = f"UMLS:{row_dict['CUI']}"
-                        iri2semantic_types[cui].add(row_dict['STY'])
+                for line in tqdm(f.readlines(), leave=True, position=0, desc='Extracting file'):
+                    row_dict = {cols[i]:v for i,v in enumerate(line.split('|')[:-1])}
+                    cui = f"UMLS:{row_dict['CUI']}"
+                    iri2semantic_types[cui].add(row_dict['STY'])
         
         self.iri2semantic_types = {k:set(vs) for k,vs in iri2semantic_types.items()}
 
