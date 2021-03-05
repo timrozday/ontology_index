@@ -675,7 +675,7 @@ class UmlsIndex():
 #                     for line in (clean_line(l) for l in tf.extractfile(member)):
 
         with zipfile.ZipFile(filepath) as f:
-            with f.open(name='MRCONSO.RRF') as df:
+            with f.open(name='umls-2020AB-data/MRCONSO.RRF') as df:
                 cols = ['CUI','LAT','TS','LUI','STT','SUI','ISPREF','AUI','SAUI','SCUI','SDUI','SAB','TTY','CODE','STR','SRL','SUPPRESS','CVF']
                 for line in tqdm((clean_line(l) for l in df), leave=True, position=0, desc='Extracting file'):
                     row_dict = {cols[i]:v for i,v in enumerate(line.split('|')) if i < len(cols)}
@@ -696,7 +696,7 @@ class UmlsIndex():
                         if iri:
                             equivalent_entities[cui].add(iri)
             
-            with f.open(name='MRSTY.RRF') as df:
+            with f.open(name='umls-2020AB-data/MRSTY.RRF') as df:
                 cols = ['CUI','STY','?1','?2','?3','?4',]
                 iri2semantic_types = defaultdict(set)
                 with open(f"{umls_dir}/MRSTY.RRF", 'rt') as f:
