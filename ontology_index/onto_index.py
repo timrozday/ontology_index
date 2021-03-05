@@ -358,7 +358,7 @@ class EfoIndex():
 class MeshIndex():
     term_rels = {
         'http://id.nlm.nih.gov/mesh/vocab#term',
-        'http://id.nlm.nih.gov/mesh/vocab#preferredTerm',
+#         'http://id.nlm.nih.gov/mesh/vocab#preferredTerm',
 #         'http://id.nlm.nih.gov/mesh/vocab#useInstead', 
 #         'http://id.nlm.nih.gov/mesh/vocab#mappedTo', 
 #         'http://id.nlm.nih.gov/mesh/vocab#preferredMappedTo', 
@@ -366,7 +366,7 @@ class MeshIndex():
 #         'http://id.nlm.nih.gov/mesh/vocab#concept'
     }  
     concept_rels = {
-        'http://id.nlm.nih.gov/mesh/vocab#preferredConcept',
+#         'http://id.nlm.nih.gov/mesh/vocab#preferredConcept',
         'http://id.nlm.nih.gov/mesh/vocab#concept',
     }
     child_rels = set()  # 'mesh_vocab:narrowerConcept'
@@ -562,8 +562,8 @@ class MeshIndex():
             p_iri = rdflib.URIRef(p)
             for s,o in tqdm(self.mesh_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}", initBindings={'p': p_iri}), leave=True, position=0, desc=str(p)):
                 if isinstance(s, rdflib.term.URIRef) and isinstance(o, rdflib.term.URIRef):
-                    self.iri2term[str(s)].add((str(p), str(o)))
-                    self.term2iri[str(o)].add((str(p), str(p)))
+                    self.iri2term[str(s)].add(str(o))
+                    self.term2iri[str(o)].add(str(s))
         
         self.iri2term = dict(self.iri2term)
         self.term2iri = dict(self.term2iri)
@@ -575,8 +575,8 @@ class MeshIndex():
             p_iri = rdflib.URIRef(p)
             for s,o in tqdm(self.mesh_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}", initBindings={'p': p_iri}), leave=True, position=0, desc=str(p)):
                 if isinstance(s, rdflib.term.URIRef) and isinstance(o, rdflib.term.URIRef):
-                    self.iri2concept[str(s)].add((str(p), str(o)))
-                    self.concept2iri[str(o)].add((str(p), str(p)))
+                    self.iri2concept[str(s)].add(str(o))
+                    self.concept2iri[str(o)].add(str(s))
         
         self.iri2concept = dict(self.iri2concept)
         self.concept2iri = dict(self.concept2iri)
