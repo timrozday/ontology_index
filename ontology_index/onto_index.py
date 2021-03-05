@@ -601,7 +601,7 @@ class MeshIndex():
             for s,o in tqdm(self.mesh_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}", initBindings={'p': p_iri}), leave=True, position=0, desc=str(p)):
                 if isinstance(s, rdflib.term.URIRef) and isinstance(o, rdflib.term.URIRef):
                     self.iri2concept[str(s)].add((str(p), str(o)))
-                    self.concept2iri[str(o)] = (str(p), str(s))
+                    self.concept2iri[str(o)] = str(s)
         
         self.iri2concept = dict(self.iri2concept)
         self.concept2iri = dict(self.concept2iri)
