@@ -699,7 +699,7 @@ class UmlsIndex():
             
             with f.open(name='umls-2020AB-data/MRSTY.RRF') as df:
                 cols = ['CUI','STY','?1','?2','?3','?4',]
-                for line in tqdm(f.readlines(), leave=True, position=0, desc='Extracting file'):
+                for line in tqdm((clean_line(l) for l in df), leave=True, position=0, desc='Extracting file'):
                     row_dict = {cols[i]:v for i,v in enumerate(line.split('|')[:-1])}
                     cui = f"UMLS:{row_dict['CUI']}"
                     iri2semantic_types[cui].add(row_dict['STY'])
