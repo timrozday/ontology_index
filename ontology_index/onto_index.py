@@ -358,7 +358,7 @@ class EfoIndex():
 class MeshIndex():
     term_rels = {
         'http://id.nlm.nih.gov/mesh/vocab#term',
-#         'http://id.nlm.nih.gov/mesh/vocab#preferredTerm',
+        'http://id.nlm.nih.gov/mesh/vocab#preferredTerm',
 #         'http://id.nlm.nih.gov/mesh/vocab#useInstead', 
 #         'http://id.nlm.nih.gov/mesh/vocab#mappedTo', 
 #         'http://id.nlm.nih.gov/mesh/vocab#preferredMappedTo', 
@@ -366,7 +366,7 @@ class MeshIndex():
 #         'http://id.nlm.nih.gov/mesh/vocab#concept'
     }  
     concept_rels = {
-#         'http://id.nlm.nih.gov/mesh/vocab#preferredConcept',
+        'http://id.nlm.nih.gov/mesh/vocab#preferredConcept',
         'http://id.nlm.nih.gov/mesh/vocab#concept',
     }
     child_rels = set()  # 'mesh_vocab:narrowerConcept'
@@ -562,8 +562,8 @@ class MeshIndex():
             p_iri = rdflib.URIRef(p)
             for s,o in tqdm(self.mesh_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}", initBindings={'p': p_iri}), leave=True, position=0, desc=str(p)):
                 if isinstance(s, rdflib.term.URIRef) and isinstance(o, rdflib.term.URIRef):
-                    self.iri2term[str(s)].add(str(o))
-                    self.term2iri[str(o)].add(str(s))
+                    self.iri2term[str(s)].add((str(p), str(o)))
+                    self.term2iri[str(o)].add((str(p), str(s)))
         
         self.iri2term = dict(self.iri2term)
         self.term2iri = dict(self.term2iri)
@@ -575,8 +575,8 @@ class MeshIndex():
             p_iri = rdflib.URIRef(p)
             for s,o in tqdm(self.mesh_graph.query(f"SELECT ?s ?o WHERE {{ ?s ?p ?o }}", initBindings={'p': p_iri}), leave=True, position=0, desc=str(p)):
                 if isinstance(s, rdflib.term.URIRef) and isinstance(o, rdflib.term.URIRef):
-                    self.iri2concept[str(s)].add(str(o))
-                    self.concept2iri[str(o)].add(str(s))
+                    self.iri2concept[str(s)].add((str(p), str(o)))
+                    self.concept2iri[str(o)].add((str(p), str(s)))
         
         self.iri2concept = dict(self.iri2concept)
         self.concept2iri = dict(self.concept2iri)
@@ -595,13 +595,13 @@ class MeshIndex():
             json.dump(self.iri2pref_name, f)
         
         with open(f"{data_dir}/mesh_iri2term.json", 'wt') as f:
-            json.dump({k:list(vs) for k,vs in self.iri2term.items()}, f)
+            json.dump({k:[list(v) for v in vs] for k,vs in self.iri2term.items()}, f)
         with open(f"{data_dir}/mesh_term2iri.json", 'wt') as f:
-            json.dump({k:list(vs) for k,vs in self.term2iri.items()}, f)
+            json.dump({k:[list(v) for v in vs] for k,vs in self.term2iri.items()}, f)
         with open(f"{data_dir}/mesh_iri2concept.json", 'wt') as f:
-            json.dump({k:list(vs) for k,vs in self.iri2concept.items()}, f)
+            json.dump({k:[list(v) for v in vs] for k,vs in self.iri2concept.items()}, f)
         with open(f"{data_dir}/mesh_concept2iri.json", 'wt') as f:
-            json.dump({k:list(vs) for k,vs in self.concept2iri.items()}, f)
+            json.dump({k:[list(v) for v in vs] for k,vs in self.concept2iri.items()}, f)
         
     def load_indexes(self, data_dir=None):
         if data_dir is None:
@@ -617,13 +617,13 @@ class MeshIndex():
             self.iri2pref_name = json.load(f)
             
         with open(f"{data_dir}/mesh_iri2term.json", 'rt') as f:
-            self.iri2term = {k:set(vs) for k,vs in json.load(f).items()}
+            self.iri2term = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/mesh_term2iri.json", 'rt') as f:
-            self.term2iri = {k:set(vs) for k,vs in json.load(f).items()}
+            self.term2iri = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/mesh_iri2concept.json", 'rt') as f:
-            self.iri2concept = {k:set(vs) for k,vs in json.load(f).items()}
+            self.iri2concept = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/mesh_concept2iri.json", 'rt') as f:
-            self.concept2iri = {k:set(vs) for k,vs in json.load(f).items()}
+            self.concept2iri = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         
 class UmlsIndex():
     name = "umls"
