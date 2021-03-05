@@ -278,17 +278,23 @@ class NameIndex(TextFilter):
     
     def is_disease(self, iri):
         try:
-            return self.efo_index.is_disease(iri)
+            r = self.efo_index.is_disease(iri)
+            if not r is None:
+                return r
         except:
             pass
 
         try:
-            return self.mesh_index.is_disease(iri)
+            r = self.mesh_index.is_disease(iri)
+            if not r is None:
+                return r
         except:
             pass
 
         try:
-            return self.umls_index.is_disease(iri)
+            r = self.umls_index.is_disease(iri)
+            if not r is None:
+                return r
         except:
             pass
         
