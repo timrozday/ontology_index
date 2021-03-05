@@ -275,7 +275,22 @@ class NameIndex(TextFilter):
         
         if iri in self.iri_name_index:
             return self.iri_name_index[iri]
+    
+    def is_disease(self, iri):
+        try:
+            return self.efo_index.is_disease(iri)
+        except:
+            pass
 
+        try:
+            return self.mesh_index.is_disease(iri)
+        except:
+            pass
+
+        try:
+            return self.umls_index.is_disease(iri)
+        except:
+            pass
         
         
 class QualifierIndex(TextFilter):
