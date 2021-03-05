@@ -116,8 +116,9 @@ class EfoIndex():
         
         self.cache = {}
 
-    def is_disease(self, iri):
-        return iri in self.disease_iris
+    def is_disease(self, iri):     
+        if (iri in self.iri2name) or (iri in self.rels_index) or (iri in self.rev_rels_index):        
+            return iri in self.disease_iris
         
     def get_children(self, iri, equivalents=True):
         rels = set()
