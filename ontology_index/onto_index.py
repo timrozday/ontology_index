@@ -422,7 +422,7 @@ class MeshIndex():
     
     def is_disease(self, iri):
         for tn in self.get_treenumber(iri):
-            if tn.split('/')[0] in self.relevant_root_treenumbers:
+            if tn.split('.')[0] in self.relevant_root_treenumbers:
                 return True
         return False
     
@@ -432,55 +432,54 @@ class MeshIndex():
             self.cache[mesh_descriptor_id] = {o.split('/')[-1] for o, in query}
         return self.cache[mesh_descriptor_id]
 
-    def get_mesh_links(self, iris, distance=2):
+#     def get_mesh_links(self, iris, distance=2):
 
-        # get treenumbers
-        iri_treenumbers = {}
-        for iri in iris:
-            if self.iri2treenumber:
-                r = self.iri2treenumber[iri]
-            else:
-                r = self.get_mesh_treenumbers(iri)
-            iri_treenumbers[iri] = r
+#         # get treenumbers
+#         iri_treenumbers = {}
+#         for iri in iris:
+#             if self.iri2treenumber:
+#                 r = self.iri2treenumber[iri]
+#             else:
+#                 r = self.get_mesh_treenumbers(iri)
+#             iri_treenumbers[iri] = r
 
-        treenumber_iris = defaultdict(set)
-        for iri, treenumbers in iri_treenumbers.items():
-            for t in treenumbers:
-                treenumber_iris[t].add(iri)
+#         treenumber_iris = defaultdict(set)
+#         for iri, treenumbers in iri_treenumbers.items():
+#             for t in treenumbers:
+#                 treenumber_iris[t].add(iri)
 
-        # parse treenumbers and create distances
-        treenumbers = list(treenumber_iris.keys())
-        treenumber_distances = defaultdict(set)
-        for i,t in enumerate(treenumbers):
-            treenumber_distances[t].add((i,0))
-            t = t.split('.')
-            for d in range(1,distance+1):
-                trimmed_t = '.'.join(t[:-d])
-                treenumber_distances[trimmed_t].add((i,d))
+#         # parse treenumbers and create distances
+#         treenumbers = list(treenumber_iris.keys())
+#         treenumber_distances = defaultdict(set)
+#         for i,t in enumerate(treenumbers):
+#             treenumber_distances[t].add((i,0))
+#             t = t.split('.')
+#             for d in range(1,distance+1):
+#                 trimmed_t = '.'.join(t[:-d])
+#                 treenumber_distances[trimmed_t].add((i,d))
 
-        # find links between treenumbers
-        links = defaultdict(set)
-        for t,ds in treenumber_distances.items():
-            for (i1,d1),(i2,d2) in it.combinations(ds,2):
-                if i1==i2:
-                    continue
-                links[tuple(sorted([i1,i2]))].add(d1+d2)
+#         # find links between treenumbers
+#         links = defaultdict(set)
+#         for t,ds in treenumber_distances.items():
+#             for (i1,d1),(i2,d2) in it.combinations(ds,2):
+#                 if i1==i2:
+#                     continue
+#                 links[tuple(sorted([i1,i2]))].add(d1+d2)
 
-        # convert to iri links
-        iri_links = set()
-        for (i1,i2),ds in links.items():
-            d = min(ds)
-            if d <= distance:
-                for iri1,iri2 in it.product(treenumber_iris[treenumbers[i1]], treenumber_iris[treenumbers[i2]]):
-                    if iri1 == iri2:
-                        continue
-                    iri_links.add((iri1, iri2, d))
-        return iri_links
+#         # convert to iri links
+#         iri_links = set()
+#         for (i1,i2),ds in links.items():
+#             d = min(ds)
+#             if d <= distance:
+#                 for iri1,iri2 in it.product(treenumber_iris[treenumbers[i1]], treenumber_iris[treenumbers[i2]]):
+#                     if iri1 == iri2:
+#                         continue
+#                     iri_links.add((iri1, iri2, d))
+#         return iri_links
 
     def get_descendents(self, iri):
-        iri = iri.split('/')[-1]
         xrefs = set()
-        for tn in self.iri2treenumber[iri]:
+        for tn in self.get_treenumber(iri):
             xrefs.update({f"http://id.nlm.nih.gov/mesh/2021/{i}" for d,i in self.treenumber_index[tn]})
         return xrefs
     
@@ -497,7 +496,7 @@ class MeshIndex():
             return related_iris
 
         related_iris = set()
-        for original_tn in self.iri2treenumber[iri]:
+        for original_tn in self.get_treenumber(iri):
             tn_split = original_tn.split('.')
 
             for i,idx in enumerate(reversed(range(len(tn_split)))):
