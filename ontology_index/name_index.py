@@ -155,7 +155,7 @@ class NameIndex(TextFilter):
                         self.iri_name_index[iri].add((name, filtered_name, tuple(tokens)))
                 
         for iri, d in tqdm(self.mesh_index.iri2name.items(), leave=True, position=0):
-            for name_type, name in d:
+            for name,name_type,score in self.mesh_index.get_names(iri):
                 filtered_name = self.filter_name(name)
                 if filtered_name:
                     if name_type in {
