@@ -477,10 +477,14 @@ class MeshIndex():
 #                     iri_links.add((iri1, iri2, d))
 #         return iri_links
 
-    def get_descendents(self, iri):
+    def get_descendents(self, iri, distance=None):
         xrefs = set()
         for tn in self.get_treenumber(iri):
-            xrefs.update({f"http://id.nlm.nih.gov/mesh/2021/{i}" for d,i in self.treenumber_index[tn]})
+            if (distance is None) or (distance==-1):
+                xrefs.update({f"http://id.nlm.nih.gov/mesh/2021/{i}" for d,i in self.treenumber_index[tn]})
+            else:
+                xrefs.update({f"http://id.nlm.nih.gov/mesh/2021/{i}" for d,i in self.treenumber_index[tn] if d<=distance})
+        
         return xrefs
     
     def get_distant_mesh_relatives(self, iri, distance=2, search_up=True):
