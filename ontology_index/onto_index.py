@@ -627,7 +627,7 @@ class MeshIndex():
         with open(f"{data_dir}/mesh_iri2term.json", 'wt') as f:
             json.dump({k:[list(v) for v in vs] for k,vs in self.iri2term.items()}, f)
         with open(f"{data_dir}/mesh_term2iri.json", 'wt') as f:
-            json.dump({k:[list(v) for v in vs] for k,vs in self.term2iri.items()}, f)
+            json.dump(self.term2iri, f)
         with open(f"{data_dir}/mesh_iri2concept.json", 'wt') as f:
             json.dump({k:[list(v) for v in vs] for k,vs in self.iri2concept.items()}, f)
         with open(f"{data_dir}/mesh_concept2iri.json", 'wt') as f:
@@ -649,7 +649,7 @@ class MeshIndex():
         with open(f"{data_dir}/mesh_iri2term.json", 'rt') as f:
             self.iri2term = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/mesh_term2iri.json", 'rt') as f:
-            self.term2iri = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
+            self.term2iri = json.load(f)
         with open(f"{data_dir}/mesh_iri2concept.json", 'rt') as f:
             self.iri2concept = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/mesh_concept2iri.json", 'rt') as f:
