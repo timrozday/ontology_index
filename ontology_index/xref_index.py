@@ -110,7 +110,7 @@ class XrefIndex():
             try:
                 r = self.mesh_index.get_distant_mesh_relatives(iri.split('/')[-1], distance=0, search_up=True)
                 if r:
-                    xrefs.update({f"http://id.nlm.nih.gov/mesh/2021/{i}" for i in r})
+                    xrefs.update(r.keys())
             except:
                 pass
             
