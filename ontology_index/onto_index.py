@@ -494,13 +494,13 @@ class MeshIndex():
                 for d, related_iri in self.treenumber_index[tn]:
                     if (d <= distance) and (not related_iri in related_iris):
                         if search_down or d==0:
-                            related_iris.add(related_iri)
+                            related_iris[related_iri].add(distance-d)
                             for related_tn in self.iri2treenumber[related_iri]:
                                 related_iris = rec_f(related_tn, distance=distance-d, related_iris=related_iris)
 
             return related_iris
 
-        related_iris = set()
+        related_iris = defaultdict(set)
         for original_tn in self.get_treenumber(iri):
             tn_split = original_tn.split('.')
 
@@ -514,7 +514,7 @@ class MeshIndex():
                 if not search_up:
                     break
 
-        return {f'http://id.nlm.nih.gov/mesh/2021/{i}' for i in related_iris} - {iri}
+        return {f'http://id.nlm.nih.gov/mesh/2021/{k}':(distance-max(vs)) for k,vs in related_iris.items()}
 
     def get_iri(self, iri):
         if iri in self.concept2iri:
