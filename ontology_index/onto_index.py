@@ -487,15 +487,16 @@ class MeshIndex():
         
         return xrefs
     
-    def get_distant_mesh_relatives(self, iri, distance=2, search_up=True):
+    def get_distant_mesh_relatives(self, iri, distance=2, search_up=True, search_down=True):
 
         def rec_f(tn, distance=2, related_iris=set()):
             if tn in self.treenumber_index:
                 for d, related_iri in self.treenumber_index[tn]:
                     if (d <= distance) and (not related_iri in related_iris):
-                        related_iris.add(related_iri)
-                        for related_tn in self.iri2treenumber[related_iri]:
-                            related_iris = rec_f(related_tn, distance=distance-d, related_iris=related_iris)
+                        if search_down or d==0:
+                            related_iris.add(related_iri)
+                            for related_tn in self.iri2treenumber[related_iri]:
+                                related_iris = rec_f(related_tn, distance=distance-d, related_iris=related_iris)
 
             return related_iris
 
