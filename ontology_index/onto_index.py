@@ -514,7 +514,7 @@ class MeshIndex():
                 if not search_up:
                     break
 
-        return related_iris - {iri}
+        return {f'http://id.nlm.nih.gov/mesh/2021/{i}' for i in related_iris} - {iri}
 
     def get_iri(self, iri):
         if iri in self.concept2iri:
