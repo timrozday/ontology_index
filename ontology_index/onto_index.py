@@ -198,14 +198,14 @@ class EfoIndex():
                     new_d = distance
 
                 if (not new_d is None) and (new_d >= 0):
-                    if not ((related_iri in related_iris) and (new_d < related_iris[related_iri])):
+                    if not ((related_iri in related_iris) and (new_d <= related_iris[related_iri])):
                         related_iris[related_iri] = new_d
                         related_iris = rec_f(related_iri, distance=new_d, related_iris=related_iris)
 
             return related_iris
 
         r = rec_f(iri, distance=distance, related_iris={})
-        r = {str(k):distance-d for k,d in r.items() if not str(k) == str(iri)}  # adjust distances
+        r = {str(k):distance-d for k,d in r.items()}  # adjust distances
 
         return r
 
