@@ -527,6 +527,9 @@ class MeshIndex():
         iri = self.get_iri(iri)
         return self.iri2treenumber[iri.split('/')[-1]]
     
+    def get_type(self, iri):
+        return self.iri2type[iri.split('/')[-1]]
+    
     def get_name(self, iri):
 #         try:
 #             query = self.mesh_graph.query(f"SELECT ?o WHERE {{ ?q <http://www.w3.org/2000/01/rdf-schema#label> ?o }}", initBindings={'q': rdflib.URIRef(iri)})
@@ -565,6 +568,11 @@ class MeshIndex():
                 
         self.treenumber_index = dict(self.treenumber_index)
         self.iri2treenumber = dict(self.iri2treenumber)
+    
+    def gen_type_indexes(self):
+        self.iri2type = {}
+        for s,o in tqdm(self.mesh_graph.query(f"SELECT ?s ?o WHERE {{ ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?o }}"), position=0, leave=True):
+            self.iri2type[str(s).split('/')[-1]] = str(o).split('#')[-1]
     
     def gen_name_indexes(self):
         self.iri2name = defaultdict(set)
@@ -632,6 +640,8 @@ class MeshIndex():
             json.dump({k:[list(v) for v in vs] for k,vs in self.iri2concept.items()}, f)
         with open(f"{data_dir}/mesh_concept2iri.json", 'wt') as f:
             json.dump(self.concept2iri, f)
+        with open(f"{data_dir}/mesh_iri2type.json", 'wt') as f:
+            json.dump(self.iri2type, f)
         
     def load_indexes(self, data_dir=None):
         if data_dir is None:
@@ -654,6 +664,8 @@ class MeshIndex():
             self.iri2concept = {k:{tuple(v) for v in vs} for k,vs in json.load(f).items()}
         with open(f"{data_dir}/mesh_concept2iri.json", 'rt') as f:
             self.concept2iri = json.load(f)
+        with open(f"{data_dir}/mesh_iri2type.json", 'rt') as f:
+            self.iri2type = json.load(f)
         
 class UmlsIndex():
     name = "umls"
